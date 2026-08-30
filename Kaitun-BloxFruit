@@ -25,13 +25,22 @@ local function SafeGenv()
 end
 local GEN = SafeGenv()
 
-((task and task.spawn) or spawn)(function()
-    local Players = game:GetService("Players")
-    local UIS = game:GetService("UserInputService")
-    local TweenService = game:GetService("TweenService")
-    local player = Players.LocalPlayer
-    local pg = player:WaitForChild("PlayerGui", 15)
-    if not pg then return end
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player
+repeat
+    player = Players.LocalPlayer
+    if not player then
+        task.wait()
+    end
+until player
+
+local pg = player:FindFirstChildOfClass("PlayerGui")
+if not pg then
+    pg = player:WaitForChild("PlayerGui")
+end
 
     local old = pg:FindFirstChild("KaitunFluentMenu")
     if old then old:Destroy() end
@@ -44,7 +53,8 @@ local GEN = SafeGenv()
     gui.Name = "KaitunFluentMenu"
     gui.ResetOnSpawn = false
     gui.IgnoreGuiInset = true
-    gui.DisplayOrder = 999999
+    gui.DisplayOrder = 1000000
+    gui.Enabled = true
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.Parent = pg
 
@@ -65,6 +75,7 @@ local GEN = SafeGenv()
     main.Position = UDim2.new(0.5,-260,0.5,-165)
     main.BackgroundColor3 = RGB(24,24,27)
     main.ClipsDescendants = true
+    main.Visible = true
     main.Parent = gui
     do local c=Instance.new("UICorner"); c.CornerRadius=CORNER(14); c.Parent=main end
     local ms = Instance.new("UIStroke",main); ms.Thickness=1; ms.Color=RGB(58,58,64)
@@ -76,7 +87,8 @@ local GEN = SafeGenv()
     bg.Position = UDim2.new(1,-230,0.5,-130)
     bg.BackgroundTransparency = 1
     bg.Image = "rbxassetid://78902644870708"
-    bg.ImageTransparency = 0.86
+    bg.ImageTransparency = 0.82
+    bg.Visible = true
     bg.ScaleType = Enum.ScaleType.Fit
     bg.ZIndex = 0
     bg.Parent = main
@@ -85,7 +97,7 @@ local GEN = SafeGenv()
     top.Size = UDim2.new(1,0,0,58); top.BackgroundTransparency=1; top.ZIndex=2; top.Parent=main
     local logo = Instance.new("ImageLabel")
     logo.Size=OFF(38,38); logo.Position=OFF(14,10); logo.BackgroundTransparency=1
-    logo.Image="rbxassetid://78902644870708"; logo.ScaleType=Enum.ScaleType.Fit; logo.Parent=top
+    logo.Image="rbxassetid://78902644870708"; logo.ScaleType=Enum.ScaleType.Fit; logo.Visible=true; logo.Parent=top
     local title=Instance.new("TextLabel")
     title.Size=UDim2.new(1,-120,1,0); title.Position=OFF(62,0); title.BackgroundTransparency=1
     title.Text="KAITUN"; title.TextColor3=RGB(245,245,247); title.TextSize=20; title.Font=Enum.Font.GothamBold
@@ -176,11 +188,9 @@ local GEN = SafeGenv()
     UIS.InputEnded:Connect(function(input)
         if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=false end
     end)
-end)
-
 repeat
-    task.wait()
-until game:IsLoaded() and game.Players.LocalPlayer
+    if task and task.wait then task.wait() else wait() end
+until game:IsLoaded() and player
 
 
 GEN.SettingFarm = GEN.SettingFarm
