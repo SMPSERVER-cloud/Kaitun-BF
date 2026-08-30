@@ -2,7 +2,30 @@
 -- KAITUN SINGLE FLUENT-STYLE MENU
 -- Auto bật khi execute | Background dùng logo 78902644870708
 -- ============================================================================
-task.spawn(function()
+local function RGB(r,g,b)
+    return Color3.new(r/255, g/255, b/255)
+end
+local function OFF(x,y)
+    return UDim2.new(0,x,0,y)
+end
+local function SCALE(x,y)
+    return UDim2.new(x,0,y,0)
+end
+local function CORNER(px)
+    return UDim.new(0,px)
+end
+local function SafeGenv()
+    if type(getgenv) == "function" then
+        local ok, env = pcall(getgenv)
+        if ok and type(env) == "table" then
+            return env
+        end
+    end
+    return _G
+end
+local GEN = SafeGenv()
+
+((task and task.spawn) or spawn)(function()
     local Players = game:GetService("Players")
     local UIS = game:GetService("UserInputService")
     local TweenService = game:GetService("TweenService")
@@ -14,7 +37,7 @@ task.spawn(function()
     if old then old:Destroy() end
 
     -- Auto Kaitun ON ngay khi execute
-    getgenv().AutoKaitun = true
+    GEN.AutoKaitun = true
     _G.Stop = false
 
     local gui = Instance.new("ScreenGui")
@@ -27,30 +50,29 @@ task.spawn(function()
 
     local open = Instance.new("ImageButton")
     open.Name = "OpenButton"
-    open.Size = UDim2.fromOffset(52,52)
+    open.Size = OFF(52,52)
     open.Position = UDim2.new(0,18,0.5,-26)
-    open.BackgroundColor3 = Color3.fromRGB(28,28,32)
+    open.BackgroundColor3 = RGB(28,28,32)
     open.Image = "rbxassetid://78902644870708"
     open.ScaleType = Enum.ScaleType.Fit
-    open.AutoButtonColor = false
     open.Parent = gui
-    Instance.new("UICorner",open).CornerRadius = UDim.new(1,0)
-    local os = Instance.new("UIStroke",open); os.Thickness=1.5; os.Color=Color3.fromRGB(70,70,78)
+    do local c=Instance.new("UICorner"); c.CornerRadius=CORNER(1); c.Parent=open end
+    local os = Instance.new("UIStroke",open); os.Thickness=1.5; os.Color=RGB(70,70,78)
 
     local main = Instance.new("Frame")
     main.Name = "Main"
-    main.Size = UDim2.fromOffset(520,330)
+    main.Size = OFF(520,330)
     main.Position = UDim2.new(0.5,-260,0.5,-165)
-    main.BackgroundColor3 = Color3.fromRGB(24,24,27)
+    main.BackgroundColor3 = RGB(24,24,27)
     main.ClipsDescendants = true
     main.Parent = gui
-    Instance.new("UICorner",main).CornerRadius = UDim.new(0,14)
-    local ms = Instance.new("UIStroke",main); ms.Thickness=1; ms.Color=Color3.fromRGB(58,58,64)
+    do local c=Instance.new("UICorner"); c.CornerRadius=CORNER(14); c.Parent=main end
+    local ms = Instance.new("UIStroke",main); ms.Thickness=1; ms.Color=RGB(58,58,64)
 
     -- Logo làm background watermark
     local bg = Instance.new("ImageLabel")
     bg.Name = "LogoBackground"
-    bg.Size = UDim2.fromOffset(280,280)
+    bg.Size = OFF(280,280)
     bg.Position = UDim2.new(1,-230,0.5,-130)
     bg.BackgroundTransparency = 1
     bg.Image = "rbxassetid://78902644870708"
@@ -62,78 +84,77 @@ task.spawn(function()
     local top = Instance.new("Frame")
     top.Size = UDim2.new(1,0,0,58); top.BackgroundTransparency=1; top.ZIndex=2; top.Parent=main
     local logo = Instance.new("ImageLabel")
-    logo.Size=UDim2.fromOffset(38,38); logo.Position=UDim2.fromOffset(14,10); logo.BackgroundTransparency=1
+    logo.Size=OFF(38,38); logo.Position=OFF(14,10); logo.BackgroundTransparency=1
     logo.Image="rbxassetid://78902644870708"; logo.ScaleType=Enum.ScaleType.Fit; logo.Parent=top
     local title=Instance.new("TextLabel")
-    title.Size=UDim2.new(1,-120,1,0); title.Position=UDim2.fromOffset(62,0); title.BackgroundTransparency=1
-    title.Text="KAITUN"; title.TextColor3=Color3.fromRGB(245,245,247); title.TextSize=20; title.Font=Enum.Font.GothamBold
+    title.Size=UDim2.new(1,-120,1,0); title.Position=OFF(62,0); title.BackgroundTransparency=1
+    title.Text="KAITUN"; title.TextColor3=RGB(245,245,247); title.TextSize=20; title.Font=Enum.Font.GothamBold
     title.TextXAlignment=Enum.TextXAlignment.Left; title.Parent=top
     local sub=Instance.new("TextLabel")
-    sub.Size=UDim2.new(1,-120,0,18); sub.Position=UDim2.fromOffset(63,33); sub.BackgroundTransparency=1
-    sub.Text="Fluent Interface  •  Auto Kaitun"; sub.TextColor3=Color3.fromRGB(150,150,158); sub.TextSize=11; sub.Font=Enum.Font.Gotham
+    sub.Size=UDim2.new(1,-120,0,18); sub.Position=OFF(63,33); sub.BackgroundTransparency=1
+    sub.Text="Fluent Interface  •  Auto Kaitun"; sub.TextColor3=RGB(150,150,158); sub.TextSize=11; sub.Font=Enum.Font.Gotham
     sub.TextXAlignment=Enum.TextXAlignment.Left; sub.Parent=top
     local close=Instance.new("TextButton")
-    close.Size=UDim2.fromOffset(38,38); close.Position=UDim2.new(1,-48,0,10); close.BackgroundTransparency=1
-    close.Text="×"; close.TextColor3=Color3.fromRGB(180,180,188); close.TextSize=25; close.Font=Enum.Font.Gotham
+    close.Size=OFF(38,38); close.Position=UDim2.new(1,-48,0,10); close.BackgroundTransparency=1
+    close.Text="×"; close.TextColor3=RGB(180,180,188); close.TextSize=25; close.Font=Enum.Font.Gotham
     close.Parent=top
 
     local side=Instance.new("Frame")
-    side.Size=UDim2.fromOffset(150,272); side.Position=UDim2.fromOffset(12,58); side.BackgroundColor3=Color3.fromRGB(30,30,34); side.Parent=main
-    Instance.new("UICorner",side).CornerRadius=UDim.new(0,10)
+    side.Size=OFF(150,272); side.Position=OFF(12,58); side.BackgroundColor3=RGB(30,30,34); side.Parent=main
+    Instance.new("UICorner",side).CornerRadius=CORNER(10)
     local nav=Instance.new("TextButton")
-    nav.Size=UDim2.new(1,-16,0,42); nav.Position=UDim2.fromOffset(8,10); nav.BackgroundColor3=Color3.fromRGB(55,55,62)
-    nav.Text="  Auto Farm"; nav.TextColor3=Color3.fromRGB(245,245,247); nav.TextSize=14; nav.Font=Enum.Font.GothamMedium
-    nav.TextXAlignment=Enum.TextXAlignment.Left; nav.Parent=side; Instance.new("UICorner",nav).CornerRadius=UDim.new(0,8)
+    nav.Size=UDim2.new(1,-16,0,42); nav.Position=OFF(8,10); nav.BackgroundColor3=RGB(55,55,62)
+    nav.Text="  Auto Farm"; nav.TextColor3=RGB(245,245,247); nav.TextSize=14; nav.Font=Enum.Font.GothamMedium
+    nav.TextXAlignment=Enum.TextXAlignment.Left; nav.Parent=side; Instance.new("UICorner",nav).CornerRadius=CORNER(8)
 
     local content=Instance.new("Frame")
-    content.Size=UDim2.new(1,-184,1,-72); content.Position=UDim2.fromOffset(174,62); content.BackgroundTransparency=1; content.ZIndex=3; content.Parent=main
+    content.Size=UDim2.new(1,-184,1,-72); content.Position=OFF(174,62); content.BackgroundTransparency=1; content.ZIndex=3; content.Parent=main
     local heading=Instance.new("TextLabel")
     heading.Size=UDim2.new(1,0,0,30); heading.BackgroundTransparency=1; heading.Text="Auto Farm"
-    heading.TextColor3=Color3.fromRGB(240,240,244); heading.TextSize=18; heading.Font=Enum.Font.GothamBold; heading.TextXAlignment=Enum.TextXAlignment.Left; heading.Parent=content
+    heading.TextColor3=RGB(240,240,244); heading.TextSize=18; heading.Font=Enum.Font.GothamBold; heading.TextXAlignment=Enum.TextXAlignment.Left; heading.Parent=content
     local desc=Instance.new("TextLabel")
-    desc.Size=UDim2.new(1,-10,0,40); desc.Position=UDim2.fromOffset(0,32); desc.BackgroundTransparency=1
+    desc.Size=UDim2.new(1,-10,0,40); desc.Position=OFF(0,32); desc.BackgroundTransparency=1
     desc.Text="Tự động nhận Quest và farm Level.\nBoss sẽ được xử lý khi có boss hợp lệ, bỏ qua Do Swan."
-    desc.TextColor3=Color3.fromRGB(155,155,163); desc.TextSize=12; desc.Font=Enum.Font.Gotham; desc.TextWrapped=true
+    desc.TextColor3=RGB(155,155,163); desc.TextSize=12; desc.Font=Enum.Font.Gotham; desc.TextWrapped=true
     desc.TextXAlignment=Enum.TextXAlignment.Left; desc.Parent=content
 
     local card=Instance.new("Frame")
-    card.Size=UDim2.new(1,-8,0,78); card.Position=UDim2.fromOffset(0,82); card.BackgroundColor3=Color3.fromRGB(32,32,37); card.Parent=content
-    Instance.new("UICorner",card).CornerRadius=UDim.new(0,10)
-    local ct=Instance.new("TextLabel"); ct.Size=UDim2.new(1,-90,0,28); ct.Position=UDim2.fromOffset(14,10); ct.BackgroundTransparency=1
-    ct.Text="Auto Kaitun"; ct.TextColor3=Color3.fromRGB(240,240,244); ct.TextSize=14; ct.Font=Enum.Font.GothamMedium; ct.TextXAlignment=Enum.TextXAlignment.Left; ct.Parent=card
-    local cs=Instance.new("TextLabel"); cs.Size=UDim2.new(1,-90,0,20); cs.Position=UDim2.fromOffset(14,40); cs.BackgroundTransparency=1
-    cs.Text="Đang hoạt động"; cs.TextColor3=Color3.fromRGB(145,145,153); cs.TextSize=11; cs.Font=Enum.Font.Gotham; cs.TextXAlignment=Enum.TextXAlignment.Left; cs.Parent=card
-    local toggle=Instance.new("TextButton"); toggle.Size=UDim2.fromOffset(54,30); toggle.Position=UDim2.new(1,-68,0.5,-15); toggle.Text=""; toggle.AutoButtonColor=false; toggle.Parent=card
+    card.Size=UDim2.new(1,-8,0,78); card.Position=OFF(0,82); card.BackgroundColor3=RGB(32,32,37); card.Parent=content
+    Instance.new("UICorner",card).CornerRadius=CORNER(10)
+    local ct=Instance.new("TextLabel"); ct.Size=UDim2.new(1,-90,0,28); ct.Position=OFF(14,10); ct.BackgroundTransparency=1
+    ct.Text="Auto Kaitun"; ct.TextColor3=RGB(240,240,244); ct.TextSize=14; ct.Font=Enum.Font.GothamMedium; ct.TextXAlignment=Enum.TextXAlignment.Left; ct.Parent=card
+    local cs=Instance.new("TextLabel"); cs.Size=UDim2.new(1,-90,0,20); cs.Position=OFF(14,40); cs.BackgroundTransparency=1
+    cs.Text="Đang hoạt động"; cs.TextColor3=RGB(145,145,153); cs.TextSize=11; cs.Font=Enum.Font.Gotham; cs.TextXAlignment=Enum.TextXAlignment.Left; cs.Parent=card
+    local toggle=Instance.new("TextButton"); toggle.Size=OFF(54,30); toggle.Position=UDim2.new(1,-68,0.5,-15); toggle.Text=""; toggle.AutoButtonColor=false; toggle.Parent=card
     Instance.new("UICorner",toggle).CornerRadius=UDim.new(1,0)
-    local knob=Instance.new("Frame"); knob.Size=UDim2.fromOffset(24,24); knob.Position=UDim2.fromOffset(27,3); knob.BackgroundColor3=Color3.fromRGB(245,245,245); knob.Parent=toggle; Instance.new("UICorner",knob).CornerRadius=UDim.new(1,0)
+    local knob=Instance.new("Frame"); knob.Size=OFF(24,24); knob.Position=OFF(27,3); knob.BackgroundColor3=RGB(245,245,245); knob.Parent=toggle; Instance.new("UICorner",knob).CornerRadius=UDim.new(1,0)
 
     local function refresh()
-        local on=getgenv().AutoKaitun==true and _G.Stop~=true
-        toggle.BackgroundColor3=on and Color3.fromRGB(70,130,90) or Color3.fromRGB(65,65,72)
-        knob.Position=on and UDim2.fromOffset(27,3) or UDim2.fromOffset(3,3)
+        local on=GEN.AutoKaitun==true and _G.Stop~=true
+        toggle.BackgroundColor3=on and RGB(70,130,90) or RGB(65,65,72)
+        knob.Position=on and OFF(27,3) or OFF(3,3)
         cs.Text=on and "Đang hoạt động" or "Đã tắt"
     end
     refresh()
     toggle.MouseButton1Click:Connect(function()
-        local on=not (getgenv().AutoKaitun==true and _G.Stop~=true)
-        getgenv().AutoKaitun=on; _G.Stop=not on; refresh()
+        local on=not (GEN.AutoKaitun==true and _G.Stop~=true)
+        GEN.AutoKaitun=on; _G.Stop=not on; refresh()
     end)
     -- Gom Quái toggle
-    getgenv().GatherMobs = getgenv().GatherMobs ~= false
+    GEN.GatherMobs = GEN.GatherMobs ~= false
     local gom = Instance.new("TextButton")
-    gom.Size = UDim2.fromOffset(120,32)
+    gom.Size = OFF(120,32)
     gom.Position = UDim2.new(1,-128,0,178)
-    gom.BackgroundColor3 = Color3.fromRGB(55,55,62)
+    gom.BackgroundColor3 = RGB(55,55,62)
     gom.Text = "Gom Quái: ON"
-    gom.TextColor3 = Color3.fromRGB(240,240,244)
+    gom.TextColor3 = RGB(240,240,244)
     gom.TextSize = 12
     gom.Font = Enum.Font.GothamMedium
-    gom.AutoButtonColor = false
     gom.Parent = content
-    Instance.new("UICorner",gom).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner",gom).CornerRadius = CORNER(8)
     gom.MouseButton1Click:Connect(function()
-        getgenv().GatherMobs = not (getgenv().GatherMobs == true)
-        gom.Text = getgenv().GatherMobs and "Gom Quái: ON" or "Gom Quái: OFF"
+        GEN.GatherMobs = not (GEN.GatherMobs == true)
+        gom.Text = GEN.GatherMobs and "Gom Quái: ON" or "Gom Quái: OFF"
     end)
 
     close.MouseButton1Click:Connect(function() main.Visible=false end)
@@ -162,7 +183,7 @@ repeat
 until game:IsLoaded() and game.Players.LocalPlayer
 
 
-getgenv().SettingFarm = getgenv().SettingFarm
+GEN.SettingFarm = GEN.SettingFarm
     or {
         ["Team"] = "Pirates",
         ["Tween Speed"] = 200,
@@ -230,7 +251,7 @@ getgenv().SettingFarm = getgenv().SettingFarm
     }
 
 -- Cầu nối ánh xạ tương thích ngược từ SettingFarm vào Config
-local activeSetting = getgenv().SettingFarm
+local activeSetting = GEN.SettingFarm
 Config = {
     Team = activeSetting["Team"] or "Pirates",
     Configuration = {
@@ -263,7 +284,7 @@ Config = {
 }
 
 function sigmahub()
-    local farmSettings = getgenv().SettingFarm or {}
+    local farmSettings = GEN.SettingFarm or {}
     -- Khóa FPS nếu bật Lock Fps
     pcall(function()
         local lockFpsConfig = farmSettings["Lock Fps"]
@@ -283,7 +304,7 @@ function sigmahub()
     -- Tự động chat (Auto Chat)
     task.spawn(function()
         while task.wait(5) do
-            if not getgenv().AutoKaitun or _G.Stop then
+            if not GEN.AutoKaitun or _G.Stop then
                 break
             end
             local autoChat = farmSettings["Auto Chat"]
@@ -312,10 +333,10 @@ function sigmahub()
     -- Tự động mua võ / kỹ năng trong Shop (Haki, Geppo, Soru, Observation, Haki Huyền Thoại)
     task.spawn(function()
         while task.wait(15) do
-            if not getgenv().AutoKaitun or _G.Stop then
+            if not GEN.AutoKaitun or _G.Stop then
                 break
             end
-            local currentSettings = getgenv().SettingFarm or {}
+            local currentSettings = GEN.SettingFarm or {}
             local shopConfig = currentSettings["Shop"]
             if shopConfig then
                 pcall(function()
@@ -344,18 +365,18 @@ function sigmahub()
     -- 🍎 SNIPER FRUIT SHOP (Tự động săn / mua trái ác quỷ trong Shop Normal & Mirage)
     task.spawn(function()
         while task.wait(30) do
-            if getgenv().AutoKaitun and not _G.Stop then
+            if GEN.AutoKaitun and not _G.Stop then
                 pcall(function()
-                    local currentSettings = getgenv().SettingFarm or {}
+                    local currentSettings = GEN.SettingFarm or {}
                     local sniperConfig = currentSettings["Sniper Fruit Shop"]
-                    local isSniperEnabled = (sniperConfig and sniperConfig["Enabled"]) or getgenv().AutoBuyFruitSniper
+                    local isSniperEnabled = (sniperConfig and sniperConfig["Enabled"]) or GEN.AutoBuyFruitSniper
                     if not isSniperEnabled then
                         return
                     end
 
                     local targetFruits = (sniperConfig and sniperConfig["Fruit Want Buy"]) or {}
-                    if #targetFruits == 0 and getgenv().SelectFruit then
-                        targetFruits = { getgenv().SelectFruit }
+                    if #targetFruits == 0 and GEN.SelectFruit then
+                        targetFruits = { GEN.SelectFruit }
                     end
 
                     -- Cập nhật danh sách trái trong cửa hàng
@@ -414,9 +435,9 @@ function sigmahub()
         end
 
         while task.wait(2.5) do
-            if getgenv().AutoKaitun and not _G.Stop then
+            if GEN.AutoKaitun and not _G.Stop then
                 pcall(function()
-                    local currentSettings = getgenv().SettingFarm or {}
+                    local currentSettings = GEN.SettingFarm or {}
                     local shopSettings = currentSettings["Shop"] or currentSettings["AUTO BUY"]
                     if not shopSettings then
                         return
@@ -502,11 +523,11 @@ function sigmahub()
     -- Cầu nối thông báo: thay thông báo Fluent bằng Notify của ProxyLib (định nghĩa bên file UI chính)
     local FarmFruitMastery = nil
     local alert = function(title, message)
-        if getgenv and getgenv().NatAov_Notify then
-            pcall(getgenv().NatAov_Notify, tostring(title or ""), tostring(message or ""))
+        if getgenv and GEN.NatAov_Notify then
+            pcall(GEN.NatAov_Notify, tostring(title or ""), tostring(message or ""))
         end
     end
-    getgenv().alert = alert
+    GEN.alert = alert
 
     -- Safe wrappers for executor-dependent functions (bảo vệ trên mobile / executor yếu)
     local function safe_isnetworkowner(part)
@@ -560,12 +581,12 @@ function sigmahub()
 
     -- Cầu nối cập nhật trạng thái: đẩy Main Task / Sub Task / Live Time vào paragraph tương ứng
     function SetText(key, text)
-        if key == "Task1" and getgenv().NatAov_SetMainTask then
-            pcall(getgenv().NatAov_SetMainTask, text)
-        elseif key == "Task2" and getgenv().NatAov_SetSubTask then
-            pcall(getgenv().NatAov_SetSubTask, text)
-        elseif key == "LiveTime" and getgenv().NatAov_SetKaitunTime then
-            pcall(getgenv().NatAov_SetKaitunTime, text)
+        if key == "Task1" and GEN.NatAov_SetMainTask then
+            pcall(GEN.NatAov_SetMainTask, text)
+        elseif key == "Task2" and GEN.NatAov_SetSubTask then
+            pcall(GEN.NatAov_SetSubTask, text)
+        elseif key == "LiveTime" and GEN.NatAov_SetKaitunTime then
+            pcall(GEN.NatAov_SetKaitunTime, text)
         end
         -- Các key khác (Currencies, Melees, DebugLine, MainTextLabel) không còn UI riêng nên bỏ qua
     end
@@ -725,7 +746,7 @@ function sigmahub()
     -- ==============================================================================
     ScriptStorage.ErrorLogs = {}
     ScriptStorage.LastStuckCheck = os.time()
-    getgenv().KaitunDebugMode = (getgenv().KaitunDebugMode == nil) and false or getgenv().KaitunDebugMode
+    GEN.KaitunDebugMode = (GEN.KaitunDebugMode == nil) and false or GEN.KaitunDebugMode
 
     -- 🔍 Hàm phân tích nguyên nhân lỗi thông minh (Smart Error Diagnosis)
     local function AnalyzeErrorReason(errMsg)
@@ -824,9 +845,9 @@ function sigmahub()
         end)
     end
 
-    -- 🔍 Hàm DebugLog chuyên sâu: In dữ liệu theo dõi khi bật getgenv().KaitunDebugMode = true
+    -- 🔍 Hàm DebugLog chuyên sâu: In dữ liệu theo dõi khi bật GEN.KaitunDebugMode = true
     function DebugLog(...)
-        if not getgenv().KaitunDebugMode then
+        if not GEN.KaitunDebugMode then
             return
         end
         local args = { ... }
@@ -840,7 +861,7 @@ function sigmahub()
     end
 
     -- 📋 Lệnh 1: Xem toàn bộ danh sách lỗi gần nhất ngay trên F9 Console
-    getgenv().Kaitun_XemLoi = function()
+    GEN.Kaitun_XemLoi = function()
         print("============================================================")
         print("📜 [BẢNG TỔNG HỢP LỖI CỦA KAITUN HUB]")
         print(
@@ -867,7 +888,7 @@ function sigmahub()
     end
 
     -- 🩺 Lệnh 2: Bác sĩ chẩn đoán toàn diện tài khoản (System Health Check)
-    getgenv().Kaitun_KiemTra = function()
+    GEN.Kaitun_KiemTra = function()
         print("============================================================")
         print("🩺 [BẢNG CHẨN ĐOÁN SỨC KHỎE ACC & HỆ THỐNG KAITUN]")
         print("------------------------------------------------------------")
@@ -915,7 +936,7 @@ function sigmahub()
     end
 
     -- 💾 Lệnh 3: Xuất toàn bộ báo cáo lỗi ra file văn bản trên máy
-    getgenv().Kaitun_XuatBaoCao = function()
+    GEN.Kaitun_XuatBaoCao = function()
         pcall(function()
             if typeof(writefile) == "function" then
                 local logLines = {}
@@ -951,9 +972,9 @@ function sigmahub()
     end
 
     -- 🎛️ Lệnh 4: Bật/Tắt chế độ Debug nhanh
-    getgenv().Kaitun_BatDebug = function(enabled)
-        getgenv().KaitunDebugMode = (enabled == nil) and true or enabled
-        if getgenv().KaitunDebugMode then
+    GEN.Kaitun_BatDebug = function(enabled)
+        GEN.KaitunDebugMode = (enabled == nil) and true or enabled
+        if GEN.KaitunDebugMode then
             print("✅ [Kaitun Debug] ĐÃ BẬT chế độ xem nhật ký theo dõi chi tiết!")
         else
             print("❌ [Kaitun Debug] ĐÃ TẮT chế độ xem nhật ký theo dõi chi tiết!")
@@ -2117,7 +2138,7 @@ function sigmahub()
         return nil
     end
     function CanBypassTeleport(targetPos)
-        local currentSettings = getgenv().SettingFarm or farmSettings
+        local currentSettings = GEN.SettingFarm or farmSettings
         local bypassConfig = currentSettings and currentSettings["Bypass Teleport"]
         if bypassConfig and not bypassConfig["Enabled"] then
             return false
@@ -2320,7 +2341,7 @@ function sigmahub()
         local currentPos = hrp.Position
         hrp.CFrame = CFrame.new(currentPos.X, targetCFrame.Y, currentPos.Z)
 
-        local currentSettings = getgenv().SettingFarm or farmSettings
+        local currentSettings = GEN.SettingFarm or farmSettings
         local configuredSpeed = tonumber(currentSettings["Tween Speed"]) or 200
         local travelSpeed = (travelDist < 18 and 25 or configuredSpeed)
 
@@ -2425,7 +2446,7 @@ function sigmahub()
     }
     LastFound = os.time()
     function CombatController.Grab(mobName)
-        if getgenv().GatherMobs == false then
+        if GEN.GatherMobs == false then
             return
         end
         safe_sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
@@ -2863,7 +2884,7 @@ function sigmahub()
 
     FunctionsHandler.RainbowSaviour:RegisterMethod("Refresh", function()
         -- 1. Kiểm tra cấu hình bật Rainbow Haki
-        local currentSettings = getgenv().SettingFarm or farmSettings
+        local currentSettings = GEN.SettingFarm or farmSettings
         local getItems = currentSettings and currentSettings["Get Items"]
         local isEnabled = getItems and (getItems["Rainbow Haki"] or getItems["RGB Haki"])
         if not isEnabled then
@@ -2909,7 +2930,7 @@ function sigmahub()
                 return
             else
                 -- Boss chưa hồi sinh trên server
-                local currentSettings = getgenv().SettingFarm or farmSettings
+                local currentSettings = GEN.SettingFarm or farmSettings
                 local canHopBoss = currentSettings
                     and currentSettings["Setting Hop"]
                     and currentSettings["Setting Hop"]["Hop Find Boss"]
@@ -3020,7 +3041,7 @@ function sigmahub()
     FunctionsHandler.RaceAwakening:Register()
     FunctionsHandler.RaceAwakening:RegisterMethod("Refresh", function()
         -- 1. Kiểm tra cấu hình bật Pull Level / Pull Lever
-        local currentSettings = getgenv().SettingFarm or farmSettings
+        local currentSettings = GEN.SettingFarm or farmSettings
         local getItems = currentSettings["Get Items"] or {}
         local isPullLevelEnabled = getItems["Pull Level"] or getItems["Pull Lever"]
         if not isPullLevelEnabled then
@@ -4457,7 +4478,7 @@ function sigmahub()
     end
 
     FunctionsHandler.CollectBerries:RegisterMethod("Refresh", function()
-        local currentSettings = getgenv().SettingFarm or farmSettings
+        local currentSettings = GEN.SettingFarm or farmSettings
         local autoCollectBerry = currentSettings
             and currentSettings["Get Items"]
             and currentSettings["Get Items"]["Auto Collect Berry"]
@@ -4622,7 +4643,7 @@ function sigmahub()
                 return check(itemName) or check(altName)
             end
 
-            local currentSettings = getgenv().SettingFarm or farmSettings
+            local currentSettings = GEN.SettingFarm or farmSettings
             local getItems = currentSettings["Get Items"] or {}
             local allowBossDrops = (getItems["Auto Farm Boss Drops"] ~= false)
 
@@ -4748,8 +4769,8 @@ function sigmahub()
                 repeat
                     task.wait(0.1)
                     TweenController.Create(summonPos)
-                until not getgenv().AutoKaitun or _G.Stop or CalculateDistance(summonPos) < 10
-                if getgenv().AutoKaitun and not _G.Stop then
+                until not GEN.AutoKaitun or _G.Stop or CalculateDistance(summonPos) < 10
+                if GEN.AutoKaitun and not _G.Stop then
                     FunctionsHandler.LocalPlayerController.Methods.EquipTool:Call("Hallow Essence")
                 end
             end
@@ -5288,7 +5309,7 @@ function sigmahub()
                 SetTask("SubTask", "CDK Quest | Waiting | Pirate Raid to Start")
                 return
             elseif cachedLevel == 3 and not ScriptStorage.Enemies["Cake Queen"] then
-                local currentSettings = getgenv().SettingFarm or farmSettings
+                local currentSettings = GEN.SettingFarm or farmSettings
                 local canHopBoss = currentSettings
                     and currentSettings["Setting Hop"]
                     and currentSettings["Setting Hop"]["Hop Find Boss"]
@@ -5512,7 +5533,7 @@ function sigmahub()
     local notifyRegistry = { Listeners = {} }
     TorchEnabledTime = 0
     DoneCdkTick = 0
-    getgenv().NotificationCallBack = function(text)
+    GEN.NotificationCallBack = function(text)
         for keyword, callback in notifyRegistry.Listeners do
             if string.find(string.lower(text), string.lower(keyword)) then
                 callback(text)
@@ -5567,8 +5588,8 @@ function sigmahub()
             if notifMod and notifMod.new then
                 originalNotificationNew = hookfunction(notifMod.new, function(title, text)
                     local notificationText = tostring(title or "") .. " " .. tostring(text or "")
-                    if getgenv().NotificationCallBack then
-                        pcall(getgenv().NotificationCallBack, notificationText)
+                    if GEN.NotificationCallBack then
+                        pcall(GEN.NotificationCallBack, notificationText)
                     end
                     return originalNotificationNew(title, text)
                 end)
@@ -5614,7 +5635,7 @@ function sigmahub()
 
     -- Lắng nghe ngay khi Admin vừa kết nối vào Server
     game:GetService("Players").PlayerAdded:Connect(function(newPlayer)
-        local currentSettings = getgenv().SettingFarm or farmSettings
+        local currentSettings = GEN.SettingFarm or farmSettings
         local hopAdmin = currentSettings
             and currentSettings["Setting Hop"]
             and currentSettings["Setting Hop"]["Hop If Admin Join Server"]
@@ -5627,8 +5648,8 @@ function sigmahub()
     -- Vòng lặp định kỳ kiểm tra Admin trong Server
     task.spawn(function()
         while task.wait(3) do
-            if getgenv().AutoKaitun and not _G.Stop then
-                local currentSettings = getgenv().SettingFarm or {}
+            if GEN.AutoKaitun and not _G.Stop then
+                local currentSettings = GEN.SettingFarm or {}
                 local hopAdmin = currentSettings["Setting Hop"]
                     and currentSettings["Setting Hop"]["Hop If Admin Join Server"]
                 if hopAdmin then
@@ -5671,10 +5692,10 @@ function sigmahub()
         local PING_LIMIT = 800
         local MAX_DURATION_SECONDS = 15
         while task.wait(2) do
-            if not getgenv().AutoKaitun or _G.Stop then
+            if not GEN.AutoKaitun or _G.Stop then
                 highPingCounter = 0
             else
-                local currentSettings = getgenv().SettingFarm or farmSettings
+                local currentSettings = GEN.SettingFarm or farmSettings
                 local hopPing = currentSettings
                     and currentSettings["Setting Hop"]
                     and currentSettings["Setting Hop"]["Hop When High Ping"]
@@ -5718,7 +5739,7 @@ function sigmahub()
         SetTask("MainTask", "Server Hopping | " .. (reason and tostring(reason) or "Switching Server"))
         local currentJobId = game.JobId
         local cursor = ""
-        while getgenv().AutoKaitun do
+        while GEN.AutoKaitun do
             local serverList = GetPublicServerList(cursor)
             if not serverList then
                 task.wait(5)
@@ -5923,7 +5944,7 @@ function sigmahub()
     -- không chiếm slot ưu tiên của RefreshTasksData nên không chặn các task khác
     -- (LevelFarm, BossesTask...) trong lúc chờ roll ra được essence.
     task.spawn(function()
-        while getgenv().AutoKaitun do
+        while GEN.AutoKaitun do
             task.wait(1)
             if
                 not _G.Stop
@@ -5948,7 +5969,7 @@ function sigmahub()
         end
     end)
     while task.wait() do
-        if not getgenv().AutoKaitun then
+        if not GEN.AutoKaitun then
             break
         end
         if Config.Configuration.HopWhenIdle and LastIdling and os.time() - LastIdling > 300.0 then
@@ -6057,7 +6078,7 @@ function sigmahub()
         end
 
         local function SendWebhook()
-            local currentSettings = getgenv().SettingFarm or {}
+            local currentSettings = GEN.SettingFarm or {}
             local webhookCfg = currentSettings["Webhook"]
             if not webhookCfg or not webhookCfg["Enabled"] then
                 return
@@ -6133,7 +6154,7 @@ function sigmahub()
             local httpReq = request
                 or http_request
                 or (syn and syn.request)
-                or (getgenv and getgenv().http and getgenv().http.request)
+                or (getgenv and GEN.http and GEN.http.request)
             if not httpReq then
                 return
             end
@@ -6153,11 +6174,11 @@ function sigmahub()
 
         task.spawn(function()
             while true do
-                local currentSettings = getgenv().SettingFarm or {}
+                local currentSettings = GEN.SettingFarm or {}
                 local webhookCfg = currentSettings["Webhook"]
                 local delayTime = (webhookCfg and tonumber(webhookCfg["Delay Send"])) or 60
                 task.wait(delayTime)
-                if getgenv().AutoKaitun and not _G.Stop then
+                if GEN.AutoKaitun and not _G.Stop then
                     pcall(SendWebhook)
                 end
             end
@@ -6167,9 +6188,9 @@ function sigmahub()
 end
 
 -- ==============================================================================
--- BỘ ĐIỀU KHIỂN BẬT / TẮT KAITUN QUA getgenv().AutoKaitun
+-- BỘ ĐIỀU KHIỂN BẬT / TẮT KAITUN QUA GEN.AutoKaitun
 -- ==============================================================================
-getgenv().AutoKaitun = true
+GEN.AutoKaitun = true
 
 -- Huỷ mọi tween đang chạy + trả lại trạng thái bình thường cho player,
 -- không để các hàm tween của Kaitun giữ player lại
@@ -6216,18 +6237,18 @@ local function KaitunRestorePlayerState()
         DisconnectAll(ScriptStorage.Connections)
     end
 
-    if getgenv().NatAov_SetMainTask then
-        pcall(getgenv().NatAov_SetMainTask, "Disabled")
+    if GEN.NatAov_SetMainTask then
+        pcall(GEN.NatAov_SetMainTask, "Disabled")
     end
-    if getgenv().NatAov_SetSubTask then
-        pcall(getgenv().NatAov_SetSubTask, "Disabled")
+    if GEN.NatAov_SetSubTask then
+        pcall(GEN.NatAov_SetSubTask, "Disabled")
     end
 end
 
 -- Đồng bộ _G.Stop liên tục theo công tắc AutoKaitun (chặn TweenController tạo tween mới ngay khi tắt)
 task.spawn(function()
     while true do
-        _G.Stop = not getgenv().AutoKaitun
+        _G.Stop = not GEN.AutoKaitun
         task.wait(0.1)
     end
 end)
@@ -6237,7 +6258,7 @@ task.spawn(function()
     while true do
         repeat
             task.wait()
-        until getgenv().AutoKaitun
+        until GEN.AutoKaitun
         _G.Stop = false
         local ok, err = pcall(sigmahub)
         KaitunRestorePlayerState()
@@ -6245,17 +6266,17 @@ task.spawn(function()
             consecutiveFailures = 0
         else
             consecutiveFailures = consecutiveFailures + 1
-            if getgenv().NatAov_Notify then
+            if GEN.NatAov_Notify then
                 pcall(
-                    getgenv().NatAov_Notify,
+                    GEN.NatAov_Notify,
                     "Kaitun Báo Lỗi",
                     "Gặp lỗi (" .. consecutiveFailures .. "/3): " .. tostring(err)
                 )
             end
             if consecutiveFailures >= 3 then
-                if getgenv().NatAov_Notify then
+                if GEN.NatAov_Notify then
                     pcall(
-                        getgenv().NatAov_Notify,
+                        GEN.NatAov_Notify,
                         "Kaitun Dừng An Toàn",
                         "Đã tạm dừng sau 3 lỗi liên tiếp. Tắt rồi bật lại Auto Kaitun để tiếp tục."
                     )
@@ -6263,7 +6284,7 @@ task.spawn(function()
                 consecutiveFailures = 0
                 repeat
                     task.wait()
-                until not getgenv().AutoKaitun
+                until not GEN.AutoKaitun
             end
         end
     end
