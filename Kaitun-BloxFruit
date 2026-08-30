@@ -78,7 +78,7 @@ task.spawn(function()
     close.Parent=top
 
     local side=Instance.new("Frame")
-    side.Size=UDim2.fromOffset(150,356); side.Position=UDim2.fromOffset(12,58); side.BackgroundColor3=Color3.fromRGB(30,30,34); side.Parent=main
+    side.Size=UDim2.fromOffset(150,272); side.Position=UDim2.fromOffset(12,58); side.BackgroundColor3=Color3.fromRGB(30,30,34); side.Parent=main
     Instance.new("UICorner",side).CornerRadius=UDim.new(0,10)
     local nav=Instance.new("TextButton")
     nav.Size=UDim2.new(1,-16,0,42); nav.Position=UDim2.fromOffset(8,10); nav.BackgroundColor3=Color3.fromRGB(55,55,62)
@@ -118,48 +118,24 @@ task.spawn(function()
         local on=not (getgenv().AutoKaitun==true and _G.Stop~=true)
         getgenv().AutoKaitun=on; _G.Stop=not on; refresh()
     end)
-
-    -- Mob Magnet / Gom Quai: ON by default.
+    -- Gom Quái toggle
     getgenv().GatherMobs = getgenv().GatherMobs ~= false
-
-    local magnetCard=Instance.new("Frame")
-    magnetCard.Size=UDim2.new(1,-8,0,78); magnetCard.Position=UDim2.fromOffset(0,168)
-    magnetCard.BackgroundColor3=Color3.fromRGB(32,32,37); magnetCard.Parent=content
-    Instance.new("UICorner",magnetCard).CornerRadius=UDim.new(0,10)
-
-    local mt=Instance.new("TextLabel")
-    mt.Size=UDim2.new(1,-90,0,28); mt.Position=UDim2.fromOffset(14,10)
-    mt.BackgroundTransparency=1; mt.Text="Gom Quái"
-    mt.TextColor3=Color3.fromRGB(240,240,244); mt.TextSize=14
-    mt.Font=Enum.Font.GothamMedium; mt.TextXAlignment=Enum.TextXAlignment.Left; mt.Parent=magnetCard
-
-    local ms=Instance.new("TextLabel")
-    ms.Size=UDim2.new(1,-90,0,20); ms.Position=UDim2.fromOffset(14,40)
-    ms.BackgroundTransparency=1; ms.Text="Gom quái cùng loại quanh mục tiêu"
-    ms.TextColor3=Color3.fromRGB(145,145,153); ms.TextSize=11
-    ms.Font=Enum.Font.Gotham; ms.TextXAlignment=Enum.TextXAlignment.Left; ms.Parent=magnetCard
-
-    local magnetToggle=Instance.new("TextButton")
-    magnetToggle.Size=UDim2.fromOffset(54,30); magnetToggle.Position=UDim2.new(1,-68,0.5,-15)
-    magnetToggle.Text=""; magnetToggle.AutoButtonColor=false; magnetToggle.Parent=magnetCard
-    Instance.new("UICorner",magnetToggle).CornerRadius=UDim.new(1,0)
-
-    local magnetKnob=Instance.new("Frame")
-    magnetKnob.Size=UDim2.fromOffset(24,24); magnetKnob.Position=UDim2.fromOffset(27,3)
-    magnetKnob.BackgroundColor3=Color3.fromRGB(245,245,245); magnetKnob.Parent=magnetToggle
-    Instance.new("UICorner",magnetKnob).CornerRadius=UDim.new(1,0)
-
-    local function refreshMagnet()
-        local on=getgenv().GatherMobs==true
-        magnetToggle.BackgroundColor3=on and Color3.fromRGB(70,130,90) or Color3.fromRGB(65,65,72)
-        magnetKnob.Position=on and UDim2.fromOffset(27,3) or UDim2.fromOffset(3,3)
-        ms.Text=on and "Đang gom quái quanh mục tiêu" or "Đã tắt gom quái"
-    end
-    refreshMagnet()
-    magnetToggle.MouseButton1Click:Connect(function()
-        getgenv().GatherMobs=not (getgenv().GatherMobs==true)
-        refreshMagnet()
+    local gom = Instance.new("TextButton")
+    gom.Size = UDim2.fromOffset(120,32)
+    gom.Position = UDim2.new(1,-128,0,178)
+    gom.BackgroundColor3 = Color3.fromRGB(55,55,62)
+    gom.Text = "Gom Quái: ON"
+    gom.TextColor3 = Color3.fromRGB(240,240,244)
+    gom.TextSize = 12
+    gom.Font = Enum.Font.GothamMedium
+    gom.AutoButtonColor = false
+    gom.Parent = content
+    Instance.new("UICorner",gom).CornerRadius = UDim.new(0,8)
+    gom.MouseButton1Click:Connect(function()
+        getgenv().GatherMobs = not (getgenv().GatherMobs == true)
+        gom.Text = getgenv().GatherMobs and "Gom Quái: ON" or "Gom Quái: OFF"
     end)
+
     close.MouseButton1Click:Connect(function() main.Visible=false end)
     open.MouseButton1Click:Connect(function() main.Visible=not main.Visible end)
 
@@ -1744,8 +1720,7 @@ function sigmahub()
         end
         return args[math.random(1, #args)]
     end
-    -- Robust model helpers: many NPC/enemy models (including Gorilla)
-    -- do not have PrimaryPart configured. Never assume PrimaryPart exists.
+    -- Safe model helpers. Gorilla và một số NPC không có PrimaryPart.
     local function GetModelRoot(instance)
         if not instance or not instance:IsA("Model") then
             return nil
@@ -1758,10 +1733,13 @@ function sigmahub()
         if primary and primary:IsA("BasePart") then
             return primary
         end
-        local torso = instance:FindFirstChild("UpperTorso")
-            or instance:FindFirstChild("Torso")
-            or instance:FindFirstChild("Head")
-        return torso and torso:IsA("BasePart") and torso or nil
+        for _, name in ipairs({"UpperTorso", "Torso", "LowerTorso", "Head"}) do
+            local part = instance:FindFirstChild(name)
+            if part and part:IsA("BasePart") then
+                return part
+            end
+        end
+        return nil
     end
 
     local function GetModelCFrameSafe(instance)
@@ -1811,23 +1789,31 @@ function sigmahub()
         local enemiesFolder = Services.Workspace:FindFirstChild("Enemies")
         if enemiesFolder then
             for _, entity in ipairs(enemiesFolder:GetChildren()) do
-                local hum = entity and entity:FindFirstChildOfClass("Humanoid")
-                local root = GetModelRoot(entity)
-                if hum and root and hum.Health > 0 then
+                if
+                    entity
+                    and entity:FindFirstChild("Humanoid")
+                    and entity:FindFirstChild("HumanoidRootPart")
+                    and entity.Humanoid.Health > 0
+                then
                     table.insert(found, entity)
                 end
             end
         end
+        for _, entity in ipairs(game.ReplicatedStorage:GetChildren()) do
+            if
+                entity
+                and entity:FindFirstChild("Humanoid")
+                and entity:FindFirstChild("HumanoidRootPart")
+                and entity.Humanoid.Health > 0
+            then
+                table.insert(found, entity)
+            end
+        end
         table.sort(found, function(entityA, entityB)
-            local rootA = GetModelRoot(entityA)
-            local rootB = GetModelRoot(entityB)
-            local distA = rootA and CaculateDistance(rootA.CFrame) or math.huge
-            local distB = rootB and CaculateDistance(rootB.CFrame) or math.huge
-            return distA < distB
+            return CaculateDistance(entityA.HumanoidRootPart.CFrame) < CaculateDistance(entityB.HumanoidRootPart.CFrame)
         end)
         return found
     end
-
     function GetMeleeIdByName(name)
         for idx, entry in MeleesTable do
             if entry == name then
@@ -1838,24 +1824,25 @@ function sigmahub()
     function getpos(name)
         local replicatedNPCs = game:GetService("ReplicatedStorage"):FindFirstChild("NPCs")
         if replicatedNPCs then
-            for _, npc in replicatedNPCs:GetChildren() do
+            for _, npc in ipairs(replicatedNPCs:GetChildren()) do
                 if npc.Name == name then
                     return GetModelCFrameSafe(npc)
                 end
             end
         end
+
         local workspaceNPCs = workspace:FindFirstChild("NPCs")
         if workspaceNPCs then
-            for _, npc in workspaceNPCs:GetChildren() do
+            for _, npc in ipairs(workspaceNPCs:GetChildren()) do
                 if npc.Name == name then
                     return GetModelCFrameSafe(npc)
                 end
             end
         end
+        return nil
     end
     function BuyMelee(meleeId, confirm)
-        local workspaceNPCs = workspace:FindFirstChild("NPCs")
-        if meleeId == "DragonClaw" and workspaceNPCs and workspaceNPCs:FindFirstChild("Sabi") then
+        if meleeId == "DragonClaw" and workspace.NPCs:FindFirstChild("Sabi") then
             if confirm then
                 local buyRes = Remotes.CommF_:InvokeServer("BlackbeardReward", "DragonClaw", "1")
                 if (buyRes == 1 or buyRes == true) and not table.find(BoughtMelees, meleeId) then
@@ -1931,183 +1918,86 @@ function sigmahub()
         self[key] = value
     end
 
-    local function ResolveQuestNpcCFrame(npcKey, npcData)
-        -- GuideModule may store the NPC position directly.
-        if npcData then
-            local direct = npcData.CFrame or npcData.Position or npcData.Pos
-            if typeof(direct) == "CFrame" then
-                return direct
-            elseif typeof(direct) == "Vector3" then
-                return CFrame.new(direct)
-            end
-        end
-
-        -- Or the key may be the NPC model name.
-        local npcName = typeof(npcKey) == "string" and npcKey or nil
-        if npcName then
-            local live = workspace:FindFirstChild("NPCs")
-                and workspace.NPCs:FindFirstChild(npcName)
-            live = live or (game.ReplicatedStorage:FindFirstChild("NPCs")
-                and game.ReplicatedStorage.NPCs:FindFirstChild(npcName))
-            if live then
-                local ok, pivot = pcall(function()
-                    return live:GetPivot()
-                end)
-                if ok and typeof(pivot) == "CFrame" then
-                    return pivot
-                end
-                local root = live:FindFirstChild("HumanoidRootPart")
-                    or live:FindFirstChild("PrimaryPart")
-                if root and root:IsA("BasePart") then
-                    return root.CFrame
-                end
-            end
-        end
-
-        -- Some GuideModule versions expose a model/part as the key.
-        if typeof(npcKey) == "Instance" then
-            local ok, pivot = pcall(function()
-                return npcKey:GetPivot()
-            end)
-            if ok and typeof(pivot) == "CFrame" then
-                return pivot
-            end
-        end
-    end
-
     function QuestManager.RefreshQuest(self)
-        local playerLevel = ScriptStorage.PlayerData
-            and tonumber(ScriptStorage.PlayerData.Level)
-            or 0
-        if playerLevel <= 0 then
+        if not (ScriptStorage.PlayerData and ScriptStorage.PlayerData.Level) then
             pcall(RefreshPlayerData)
-            playerLevel = ScriptStorage.PlayerData
-                and tonumber(ScriptStorage.PlayerData.Level)
-                or 0
+            local waitTimeout = os.time() + 5
+            while not (ScriptStorage.PlayerData and ScriptStorage.PlayerData.Level) and os.time() < waitTimeout do
+                task.wait(0.3)
+                pcall(RefreshPlayerData)
+            end
         end
-        if playerLevel <= 0 or not QuestManager.Quests then
-            return false
-        end
-
-        local highestLevelReq = -1
+        local highestLevelReq = 0
         local matchedQuest = nil
-        local matchedQuestId = nil
-
         for questId, questList in pairs(QuestManager.Quests) do
-            if not QuestManager.BlacklistedQuestIds[questId] and type(questList) == "table" then
+            if not QuestManager.BlacklistedQuestIds[questId] then
                 local firstStep = questList[1]
-                local levelReq = firstStep and tonumber(firstStep.LevelReq)
-                if levelReq and levelReq <= playerLevel and levelReq >= highestLevelReq then
-                    highestLevelReq = levelReq
+                if
+                    firstStep
+                    and firstStep.LevelReq >= highestLevelReq
+                    and firstStep.LevelReq <= ScriptStorage.PlayerData.Level
+                then
+                    highestLevelReq = firstStep.LevelReq
                     matchedQuest = questList
-                    matchedQuestId = questId
-                end
-            end
-        end
-
-        if not matchedQuest then
-            return false
-        end
-
-        self.CurrentQuestId = matchedQuestId
-        self.CurrentQuests = matchedQuest
-        self.CurrentLevel = 2
-
-        -- Remove completed trailing step without mutating the original quest
-        -- table more than necessary.
-        local lastStep = matchedQuest[#matchedQuest]
-        if lastStep and lastStep.Task then
-            local completed = true
-            for _, stepDone in pairs(lastStep.Task) do
-                if stepDone ~= 1 then
-                    completed = false
-                    break
-                end
-            end
-            if completed and #matchedQuest > 1 then
-                self.CurrentQuests = table.clone(matchedQuest)
-                table.remove(self.CurrentQuests, #self.CurrentQuests)
-            end
-        end
-
-        local questLevelReq = tonumber(self.CurrentQuests[1] and self.CurrentQuests[1].LevelReq)
-            or highestLevelReq
-        self.CurrentNpc = nil
-
-        for npcEntry, npcData in pairs(GuideNPCList or {}) do
-            local levels = npcData and npcData.Levels
-            local matches = false
-            if type(levels) == "table" then
-                for _, npcLevel in ipairs(levels) do
-                    if tonumber(npcLevel) == questLevelReq then
-                        matches = true
+                    self.CurrentQuestId = questId
+                    if ScriptStorage.PlayerData.Level >= 1500 and SeaIndex == 2 and questId == "ForgottenQuest" then
                         break
                     end
                 end
             end
-
-            if matches then
-                self.CurrentNpc = ResolveQuestNpcCFrame(npcEntry, npcData)
-                if self.CurrentNpc then
+        end
+        if not matchedQuest then
+            return
+        end
+        local questCopy = table.clone(matchedQuest)
+        local lastStep = questCopy[#questCopy]
+        if lastStep and lastStep.Task then
+            for _, stepDone in pairs(lastStep.Task) do
+                if stepDone == 1 then
+                    table.remove(questCopy, #questCopy)
                     break
                 end
             end
         end
-
-        -- Fallback: use any NPC whose GuideModule name contains "Quest Giver"
-        -- and whose metadata matches the selected level.
-        if not self.CurrentNpc then
-            for npcEntry, npcData in pairs(GuideNPCList or {}) do
-                local levels = npcData and npcData.Levels
-                if type(levels) == "table" then
-                    for _, npcLevel in ipairs(levels) do
-                        if tonumber(npcLevel) == questLevelReq then
-                            local keyText = tostring(npcEntry):lower()
-                            if string.find(keyText, "quest") or string.find(keyText, "giver") then
-                                self.CurrentNpc = ResolveQuestNpcCFrame(npcEntry, npcData)
-                                if self.CurrentNpc then
-                                    break
-                                end
-                            end
-                        end
+        self.CurrentNpc = nil
+        matchedQuest = questCopy
+        local questLevel = matchedQuest[1] and matchedQuest[1].LevelReq
+        for npcEntry, npcData in pairs(GuideNPCList) do
+            for _, npcLevel in ipairs(npcData.Levels or {}) do
+                if questLevel and npcLevel == questLevel then
+                    local npcCF = GetModelCFrameSafe(npcEntry)
+                    if npcCF then
+                        self.CurrentNpc = npcCF
+                    elseif typeof(npcEntry) == "CFrame" then
+                        self.CurrentNpc = npcEntry
+                    elseif typeof(npcEntry) == "Vector3" then
+                        self.CurrentNpc = CFrame.new(npcEntry)
                     end
                 end
-                if self.CurrentNpc then
-                    break
-                end
             end
         end
-
-        return true
+        self.CurrentQuests = matchedQuest
     end
 
     function QuestManager.GetCurrentQuest(self)
         if not self.CurrentQuestId or not self.CurrentQuests or #self.CurrentQuests == 0 then
-            if not self:RefreshQuest() then
-                return
-            end
+            self:RefreshQuest()
         end
-
-        local stepIndex = self.CurrentLevel
-        local questStep = self.CurrentQuests[stepIndex]
-
-        if not questStep
-            or not questStep.Task
-            or (questStep.LevelReq and tonumber(questStep.LevelReq) > tonumber(ScriptStorage.PlayerData.Level or 0))
-        then
-            stepIndex = 1
-            questStep = self.CurrentQuests[stepIndex]
-        end
-
-        if questStep and questStep.Task then
-            local taskFlag = next(questStep.Task)
+        local stepIndex = self.CurrentQuests[self.CurrentLevel]
+                and self.CurrentQuests[self.CurrentLevel].LevelReq <= (ScriptStorage.PlayerData.Level or 0)
+                and self.CurrentLevel
+            or 1
+        local questStepData = self.CurrentQuests[stepIndex]
+        if questStepData and questStepData.Task then
+            local taskFlag = next(questStepData.Task)
             if taskFlag then
-                local targetName = questStep.Name or taskFlag
+                local targetName = questStepData.Name
+                if not targetName or targetName == "" then
+                    targetName = taskFlag
+                end
                 return taskFlag, self.CurrentNpc, self.CurrentQuestId, stepIndex, targetName
             end
         end
-
-        return nil
     end
 
     function QuestManager.MarkAsCompleted(self)
@@ -2455,9 +2345,9 @@ function sigmahub()
         if enemiesFolder then
             for _, enemy in ipairs(enemiesFolder:GetChildren()) do
                 local inRange = enemy:FindFirstChild("Humanoid")
-                    and GetModelRoot(enemy)
+                    and enemy:FindFirstChild("HumanoidRootPart")
                     and enemy.Humanoid.Health > 0
-                    and (GetModelRoot(enemy).Position - myHrp.Position).Magnitude <= 75
+                    and (enemy.HumanoidRootPart.Position - myHrp.Position).Magnitude <= 75
                 if inRange then
                     table.insert(bladehits, enemy)
                 end
@@ -2477,9 +2367,9 @@ function sigmahub()
             for _, enemy in ipairs(charsFolder:GetChildren()) do
                 local inRange = enemy.Name ~= game.Players.LocalPlayer.Name
                     and enemy:FindFirstChild("Humanoid")
-                    and GetModelRoot(enemy)
+                    and enemy:FindFirstChild("HumanoidRootPart")
                     and enemy.Humanoid.Health > 0
-                    and (GetModelRoot(enemy).Position - myHrp.Position).Magnitude <= 75
+                    and (enemy.HumanoidRootPart.Position - myHrp.Position).Magnitude <= 75
                 if inRange then
                     table.insert(bladehits, enemy)
                 end
@@ -2538,11 +2428,12 @@ function sigmahub()
         if getgenv().GatherMobs == false then
             return
         end
-
         safe_sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-        if not CombatController.GRAB then
+        if not CombatController.GRAB or GrabDebounce == os.time() then
             return
         end
+        GrabDebounce = os.time()
+
         local targetRoot = GetModelRoot(MonResult)
         if not targetRoot then
             return
@@ -2553,48 +2444,26 @@ function sigmahub()
             return
         end
 
-        -- Gom các mob cùng tên vào một cụm nhỏ quanh mục tiêu chính.
-        -- Giữ radius vừa phải để tránh kéo nhầm mob ở khu vực khác.
-        local maxGrabDistance = CombatController.GRAB_DISTANCE or (SeaIndex == 1 and 250 or 350)
-        local gathered = 0
-
+        local maxGrabDistance = CombatController.GRAB_DISTANCE or (SeaIndex == 1 and 300 or 400)
         for _, enemy in ipairs(enemiesFolder:GetChildren()) do
             if enemy ~= MonResult and enemy.Name == mobName then
                 local hum = enemy:FindFirstChildOfClass("Humanoid")
-                local root = enemy:FindFirstChild("HumanoidRootPart")
-
+                local root = GetModelRoot(enemy)
                 if hum and root and hum.Health > 0 then
-                    local dist = (root.Position - targetPos).Magnitude
-                    if dist <= maxGrabDistance then
+                    if (root.Position - targetPos).Magnitude <= maxGrabDistance then
                         root.CanCollide = false
-                        pcall(function()
-                            root:SetNetworkOwner(LocalPlayer)
-                        end)
-
-                        -- Đưa mob vào cụm 2x2 quanh mục tiêu để AOE dễ trúng.
-                        local angle = gathered * 1.5708
-                        local offset = Vector3.new(
-                            math.cos(angle) * 2,
-                            0,
-                            math.sin(angle) * 2
-                        )
-
-                        if safe_isnetworkowner(root) then
-                            root.CFrame = targetRoot.CFrame + offset
-                        else
-                            local bv = root:FindFirstChild("FarmingVelocity")
-                            if not bv then
-                                bv = Instance.new("BodyVelocity")
-                                bv.Name = "FarmingVelocity"
-                                bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                                bv.Velocity = Vector3.zero
-                                bv.Parent = root
-                            end
-                            bv.Velocity = (targetPos - root.Position) * 8
+                        local bv = root:FindFirstChild("FarmingVelocity")
+                        if not bv then
+                            bv = Instance.new("BodyVelocity")
+                            bv.Name = "FarmingVelocity"
+                            bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                            bv.Velocity = Vector3.zero
+                            bv.Parent = root
                         end
-
+                        if safe_isnetworkowner(root) then
+                            root.CFrame = targetRoot.CFrame * CFrame.new(math.random(-2,2), 0, math.random(-2,2))
+                        end
                         enemy:SetAttribute("IsGrabbed", true)
-                        gathered = gathered + 1
                     end
                 end
             end
@@ -2602,39 +2471,30 @@ function sigmahub()
     end
 
     local function GetEntityDistance(entity)
-        local rootPart = GetModelRoot(entity)
+        local rootPart = entity and entity:FindFirstChild("HumanoidRootPart")
         return rootPart and math.floor(CalculateDistance(rootPart.CFrame)) or math.huge
     end
     function CombatController.Search(names)
         local candidates = {}
-        names = type(names) == "string" and { names } or (names or {})
-
-        local enemiesFolder = Services.Workspace:FindFirstChild("Enemies")
-        if enemiesFolder then
-            for _, entity in ipairs(enemiesFolder:GetChildren()) do
-                local hum = entity:FindFirstChildOfClass("Humanoid")
-                local root = GetModelRoot(entity)
-                if table.find(names, entity.Name)
-                    and hum
-                    and root
-                    and hum.Health > 0
-                    and (entity:GetAttribute("FailureCount") or 0) < 3
-                then
+        local anyFound = false
+        for _, entity in GetMonAsSortedRange() do
+            local hum = entity:FindFirstChildOfClass("Humanoid")
+            local root = GetModelRoot(entity)
+            if table.find(names, entity.Name) and hum and root and hum.Health > 0 then
+                if (entity:GetAttribute("FailureCount") or 0) < 3 then
+                    anyFound = true
                     table.insert(candidates, entity)
                 end
             end
         end
-
         table.sort(candidates, function(entityA, entityB)
-            local rootA = GetModelRoot(entityA)
-            local rootB = GetModelRoot(entityB)
-            local distA = rootA and CaculateDistance(rootA.CFrame) or math.huge
-            local distB = rootB and CaculateDistance(rootB.CFrame) or math.huge
-            return distA < distB
+            return GetEntityDistance(entityA) < GetEntityDistance(entityB)
         end)
-        return candidates[1]
+        if anyFound then
+            local best = candidates[1]
+            return best
+        end
     end
-
     function CombatController.Attack(names, useNearest, maxDistance, onGiveUp)
         if
             ScriptStorage.Tools["Sweet Chalice"] and safe_getsenv(game.ReplicatedStorage.GuideModule)["_G"]["InCombat"]
@@ -2656,16 +2516,15 @@ function sigmahub()
             end
             if useNearest then
                 local nearestMob = GetMonAsSortedRange()[1]
-                local nearestPos = nearestMob
-                    and nearestMob:FindFirstChild("HumanoidRootPart")
-                    and nearestMob.HumanoidRootPart.Position
+                local nearestRoot = GetModelRoot(nearestMob)
+                local nearestPos = nearestRoot and nearestRoot.Position
                 if nearestPos and CaculateDistance(nearestPos) < maxDistance then
                     MonResult = nearestMob
                 end
             else
                 MonResult = CombatController.Search(names)
             end
-            if MonResult and MonResult:IsDescendantOf(workspace) and GetModelRoot(MonResult) then
+            if MonResult then
                 LastFound = os.time()
                 local attackTicks = 0
                 local attackTicks2, lastTickTime = 0, os.time()
@@ -2696,11 +2555,11 @@ function sigmahub()
                         myHum:ChangeState(Enum.HumanoidStateType.Jumping)
                     end
 
+                    if not MonResult:IsDescendantOf(workspace) then
+                        break
+                    end
                     local monHumanoid = MonResult:FindFirstChildOfClass("Humanoid")
                     local monRoot = GetModelRoot(MonResult)
-                    if monRoot and not monRoot:IsDescendantOf(workspace) then
-                        monRoot = nil
-                    end
                     if not monHumanoid or not monRoot or monHumanoid.Health <= 0 then
                         if MonResult.Name == "Don Swan" then
                             Storage:Set("SwanDefeated", true)
@@ -2737,9 +2596,7 @@ function sigmahub()
                                 attackTicks = 0
                                 local oldPos = MonResult:GetAttribute("OldPosition")
                                 if oldPos then
-                                    pcall(function()
-                                        MonResult:PivotTo(CFrame.new(oldPos))
-                                    end)
+                                    pcall(function() MonResult:PivotTo(CFrame.new(oldPos)) end)
                                     MonResult:SetAttribute("IgnoreGrab", true)
                                     MonResult:SetAttribute(
                                         "FailureCount",
@@ -2751,10 +2608,7 @@ function sigmahub()
                                             .. tostring(MonResult:GetAttribute("FailureCount") or 0)
                                             .. ")"
                                     )
-                                    local resetRoot = GetModelRoot(MonResult)
-                                    if resetRoot then
-                                        resetRoot.CFrame = CFrame.new(oldPos)
-                                    end
+                                    MonResult.HumanoidRootPart.CFrame = (CFrame.new(oldPos))
                                     task.wait()
                                     return
                                 end
@@ -2766,7 +2620,7 @@ function sigmahub()
                         if shouldUseFruit then
                             TweenController.Create(monRoot.CFrame + Vector3.new(0, 25, 0))
                             FunctionsHandler.LocalPlayerController.Methods.EquipTool:Call("Blox Fruit")
-                            LockAimPositionTo(monRoot.CFrame.p)
+                            LockAimPositionTo(MonResult.HumanoidRootPart.CFrame.p)
                             local keyList = { "Z", "X", "C", "V" }
                             local chosenKey = keyList[math.random(1, #keyList)]
                             SendKey(chosenKey, 0.31)
@@ -2798,7 +2652,7 @@ function sigmahub()
                     ["God's Guard"] = Vector3.new(-4720, 845, -1950),
                     ["Bandit"] = Vector3.new(1060, 16, 1548),
                     ["Monkey"] = Vector3.new(-1610, 36, 147),
-                    ["Gorilla"] = Vector3.new(-1225, 7, -505),
+                    ["Gorilla"] = Vector3.new(-1240, 6, -500),
                     ["Pirate"] = Vector3.new(-1215, 4, 3915),
                     ["Brute"] = Vector3.new(-1145, 14, 4300),
                     ["Desert Bandit"] = Vector3.new(900, 6, 4400),
@@ -2816,9 +2670,10 @@ function sigmahub()
 
                 local regionList = ScriptStorage.MobRegions[mobName]
                 if not regionList then
-                    local foundNpc = Services.Workspace.Enemies:FindFirstChild(mobName)
-                        or game.ReplicatedStorage:FindFirstChild(mobName)
-                    regionList = foundNpc and { foundNpc:GetPrimaryPartCFrame().p }
+                    local foundNpc = Services.Workspace:FindFirstChild("Enemies")
+                        and Services.Workspace.Enemies:FindFirstChild(mobName)
+                    local foundCF = GetModelCFrameSafe(foundNpc)
+                    regionList = foundCF and { foundCF.Position }
                 end
                 if not regionList and KnownMobPositions[mobName] then
                     regionList = { KnownMobPositions[mobName] }
@@ -3754,19 +3609,6 @@ function sigmahub()
             CombatController.Attack("God's Guard")
         elseif farmMode == 4 then
             local _, questNpcPos, questId, questStep, targetName = QuestManager:GetCurrentQuest()
-
-            if not questId or not questStep or not targetName then
-                QuestManager:RefreshQuest()
-                _, questNpcPos, questId, questStep, targetName = QuestManager:GetCurrentQuest()
-            end
-
-            if not targetName or targetName == "" then
-                SetTask("MainTask", "Level Farming | Refreshing Quest...")
-                task.wait(0.5)
-                QuestManager:RefreshQuest()
-                return
-            end
-
             local claimedQuestMob = GetCurrentClaimQuest()
             if claimedQuestMob then
                 if claimedQuestMob ~= targetName and claimedQuestMob ~= (targetName .. "s") then
@@ -3774,13 +3616,11 @@ function sigmahub()
                 end
             else
                 if not questNpcPos then
-                    QuestManager:RefreshQuest()
-                    questNpcPos = QuestManager.CurrentNpc
-                end
-                if not questNpcPos then
-                    SetTask("MainTask", "Level Farming | Searching Quest Giver...")
-                    task.wait(1)
-                    return
+                    return QuestManager:RefreshQuest()
+                        and Report(
+                            "Lỗi không xác định được tọa độ NPC nhận nhiệm vụ cấp độ hiện tại!",
+                            "LỖI NHIỆM VỤ"
+                        )
                 end
                 TweenController.Create(questNpcPos + Vector3.new(0, 5, 3))
                 SetTask("MainTask", "Level Farming | " .. targetName .. " | Claiming Quest")
@@ -3788,18 +3628,8 @@ function sigmahub()
                     return
                 end
                 levelFarmStuckTimer = 0
-                local startResult
-                pcall(function()
-                    startResult = QuestManager.StartQuest(questId, questStep)
-                end)
-                task.wait(0.5)
-
-                -- Nếu server không nhận quest, refresh dữ liệu và thử lại ở vòng sau.
-                local verifyMob = GetCurrentClaimQuest()
-                if not verifyMob then
-                    DebugLog("StartQuest did not produce an active quest:", questId, questStep, startResult)
-                    QuestManager:RefreshQuest()
-                end
+                QuestManager.StartQuest(questId, questStep)
+                task.wait(0.3)
             end
             SetTask("MainTask", "Level Farming | " .. targetName .. " | Defeating Enemies")
             local fightStartTime = os.time()
@@ -4308,31 +4138,29 @@ function sigmahub()
             RefreshRace()
         end
     end)
-    -- Boss mode:
-    -- * Only names from BossesOrder/SpecialBossesOrder are treated as bosses.
-    -- * Don Swan / "Do Swan" is always excluded.
-    -- * If no real boss is spawned, LevelFarm remains the fallback task.
-    local function IsBlockedBossName(name)
-        local normalized = string.lower(tostring(name or "")):gsub("%s+", " ")
-        return normalized == "don swan" or normalized == "do swan"
+    -- Boss Hunter: chỉ đánh boss có trong BossesOrder và đang spawn.
+    -- Don Swan / Do Swan luôn bị loại bỏ.
+    local function IsBlockedBoss(name)
+        local n = string.lower(tostring(name or "")):gsub("%s+", " ")
+        return n == "don swan" or n == "do swan"
     end
 
-    local function GetEligibleBoss()
-        local level = tonumber(ScriptStorage.PlayerData and ScriptStorage.PlayerData.Level) or 0
+    local function FindSpawnedEligibleBoss()
         local enemies = workspace:FindFirstChild("Enemies")
         if not enemies then
             return nil
         end
 
+        local level = tonumber(ScriptStorage.PlayerData and ScriptStorage.PlayerData.Level) or 0
         for _, bossName in ipairs(BossesOrder or {}) do
-            if not IsBlockedBossName(bossName) then
-                local requiredLevel = tonumber(BossesOrderLevel[bossName]) or 0
-                if level >= requiredLevel then
-                    local enemy = enemies:FindFirstChild(bossName)
-                    local hum = enemy and enemy:FindFirstChildOfClass("Humanoid")
-                    local root = enemy and enemy:FindFirstChild("HumanoidRootPart")
-                    if enemy and hum and root and hum.Health > 0 then
-                        return enemy
+            if not IsBlockedBoss(bossName) then
+                local required = tonumber(BossesOrderLevel[bossName]) or 0
+                if level >= required then
+                    local boss = enemies:FindFirstChild(bossName)
+                    local hum = boss and boss:FindFirstChildOfClass("Humanoid")
+                    local root = boss and GetModelRoot(boss)
+                    if boss and hum and root and hum.Health > 0 then
+                        return boss
                     end
                 end
             end
@@ -4341,17 +4169,15 @@ function sigmahub()
     end
 
     FunctionsHandler.BossesTask:RegisterMethod("Refresh", function()
-        return GetEligibleBoss()
+        return FindSpawnedEligibleBoss()
     end)
 
     FunctionsHandler.BossesTask:RegisterMethod("Start", function(boss)
-        if not boss or not boss:IsA("Model") or IsBlockedBossName(boss.Name) then
+        if not boss or not boss:IsA("Model") or IsBlockedBoss(boss.Name) then
             return false
         end
-
         local hum = boss:FindFirstChildOfClass("Humanoid")
-        local root = boss:FindFirstChild("HumanoidRootPart")
-        if not hum or not root or hum.Health <= 0 then
+        if not hum or not GetModelRoot(boss) or hum.Health <= 0 then
             return false
         end
 
@@ -4359,43 +4185,25 @@ function sigmahub()
         CombatController.Attack(boss.Name, false, nil, function()
             pcall(RefreshInventory)
         end)
-        pcall(RefreshInventory)
         return true
     end)
 
     FunctionsHandler.SpecialBossesTask:RegisterMethod("Refresh", function()
-        local level = tonumber(ScriptStorage.PlayerData and ScriptStorage.PlayerData.Level) or 0
-        local enemies = workspace:FindFirstChild("Enemies")
-        if not enemies then
-            return nil
-        end
-
-        for bossName, requiredLevel in pairs(SpecialBossesOrder or {}) do
-            if level >= tonumber(requiredLevel or 0) and not IsBlockedBossName(bossName) then
-                local enemy = enemies:FindFirstChild(bossName)
-                local hum = enemy and enemy:FindFirstChildOfClass("Humanoid")
-                local root = enemy and enemy:FindFirstChild("HumanoidRootPart")
-                if enemy and hum and root and hum.Health > 0 then
-                    return enemy
-                end
-            end
-        end
-        return nil
+        -- Special boss cũng phải nằm trong danh sách boss hợp lệ.
+        return FindSpawnedEligibleBoss()
     end)
 
     FunctionsHandler.SpecialBossesTask:RegisterMethod("Start", function(boss)
-        if not boss or not boss:IsA("Model") or IsBlockedBossName(boss.Name) then
+        if not boss or not boss:IsA("Model") or IsBlockedBoss(boss.Name) then
             return false
         end
-
         local hum = boss:FindFirstChildOfClass("Humanoid")
-        if not hum or hum.Health <= 0 then
+        if not hum or not GetModelRoot(boss) or hum.Health <= 0 then
             return false
         end
 
         SetTask("MainTask", "Boss Hunter | " .. boss.Name .. " | Defeating")
         CombatController.Attack(boss.Name)
-        pcall(RefreshInventory)
         return true
     end)
 
@@ -4587,7 +4395,7 @@ function sigmahub()
                     and task.wait(0.05)
                 do
                     attackedAny = true
-                    if string.find(enemy.Name, "Master") then
+                    if string.find(enemy.Name, "Master") or true then
                         CombatController.Attack(enemy.Name)
                     else
                         pcall(sethiddenproperty, LocalPlayer, "SimulationRadius", math.huge)
@@ -4679,7 +4487,8 @@ function sigmahub()
                     if attrName:sub(1, 12) == "_BerryCFrame" and taggedBush:GetAttribute(attrName) then
                         local bushParent = taggedBush.Parent
                         if bushParent and bushParent:IsA("Model") then
-                            local pivotPos = bushParent:GetPivot().Position
+                            local bushCF = GetModelCFrameSafe(bushParent)
+                            local pivotPos = bushCF and bushCF.Position
                             local dist = (pivotPos - hrp.Position).Magnitude
                             if dist < closestDist then
                                 closestBush = bushParent
@@ -4719,8 +4528,9 @@ function sigmahub()
             local berriesFolder = activeBerryBush:FindFirstChild("Berries")
             if berriesFolder then
                 for _, berryModel in ipairs(berriesFolder:GetChildren()) do
-                    if berryModel:IsA("Model") and berryModel.PrimaryPart then
-                        TweenController.Create(berryModel.PrimaryPart.CFrame)
+                    local berryCF = GetModelCFrameSafe(berryModel)
+                    if berryModel:IsA("Model") and berryCF then
+                        TweenController.Create(berryCF)
                         task.wait(0.2)
                         return
                     end
@@ -5659,10 +5469,8 @@ function sigmahub()
             end
         else
             if progressState[2] == 1 then
-                local replicatedNPCs = game.ReplicatedStorage:FindFirstChild("NPCs")
-                if replicatedNPCs then
-                    for _, npc in replicatedNPCs:GetChildren() do
-                        if npc.Name == "Luxury Boat Dealer" then
+                for _, npc in (game.ReplicatedStorage:FindFirstChild("NPCs") and game.ReplicatedStorage.NPCs:GetChildren() or {}) do
+                    if npc.Name == "Luxury Boat Dealer" then
                         repeat
                             task.wait()
                             if os.time() - DoneCdkTick < 15 then
@@ -5677,15 +5485,13 @@ function sigmahub()
                             local npcsFolder = workspace:FindFirstChild("NPCs")
                             if npcsFolder then
                                 for _, candidateNpc in ipairs(npcsFolder:GetChildren()) do
-                                    local candidateCF = GetModelCFrameSafe(candidateNpc)
-                                    local dealerCF = GetModelCFrameSafe(npc)
-                                    if candidateCF and dealerCF and CalculateDistance(candidateCF, dealerCF) < 20 then
+                                    if CalculateDistance(GetModelCFrameSafe(candidateNpc), GetModelCFrameSafe(npc)) < 20 then
                                         luxuryBoatDealerNpc = candidateNpc
                                         break
                                     end
                                 end
                             end
-                        until (GetModelCFrameSafe(npc) and CalculateDistance(GetModelCFrameSafe(npc)) < 5) and luxuryBoatDealerNpc
+                        until CalculateDistance(GetModelCFrameSafe(npc)) < 5 and luxuryBoatDealerNpc
                         Remotes.CommF_:InvokeServer("CDKQuest", "BoatQuest", luxuryBoatDealerNpc)
                     end
                 end
@@ -6013,7 +5819,6 @@ function sigmahub()
                         end)
                         return
                     end
-                end
                 end
             elseif not TaskWarned[taskName] then
                 DebugLog("[ Debug ] Task", taskName, "is not registered yet")
