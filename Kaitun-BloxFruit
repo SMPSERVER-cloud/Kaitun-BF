@@ -1744,6 +1744,48 @@ function sigmahub()
         end
         return args[math.random(1, #args)]
     end
+    -- Robust model helpers: many NPC/enemy models (including Gorilla)
+    -- do not have PrimaryPart configured. Never assume PrimaryPart exists.
+    local function GetModelRoot(instance)
+        if not instance or not instance:IsA("Model") then
+            return nil
+        end
+        local root = instance:FindFirstChild("HumanoidRootPart")
+        if root and root:IsA("BasePart") then
+            return root
+        end
+        local primary = instance.PrimaryPart
+        if primary and primary:IsA("BasePart") then
+            return primary
+        end
+        local torso = instance:FindFirstChild("UpperTorso")
+            or instance:FindFirstChild("Torso")
+            or instance:FindFirstChild("Head")
+        return torso and torso:IsA("BasePart") and torso or nil
+    end
+
+    local function GetModelCFrameSafe(instance)
+        if not instance then
+            return nil
+        end
+        if instance:IsA("BasePart") then
+            return instance.CFrame
+        end
+        if instance:IsA("Model") then
+            local root = GetModelRoot(instance)
+            if root then
+                return root.CFrame
+            end
+            local ok, pivot = pcall(function()
+                return instance:GetPivot()
+            end)
+            if ok and typeof(pivot) == "CFrame" then
+                return pivot
+            end
+        end
+        return nil
+    end
+
     function RoundVector3Down(vec)
         return Vector3.new(math.floor(vec.X / 10) * 10, math.floor(vec.Y / 10) * 10, math.floor(vec.Z / 10) * 10)
     end
@@ -1769,31 +1811,23 @@ function sigmahub()
         local enemiesFolder = Services.Workspace:FindFirstChild("Enemies")
         if enemiesFolder then
             for _, entity in ipairs(enemiesFolder:GetChildren()) do
-                if
-                    entity
-                    and entity:FindFirstChild("Humanoid")
-                    and entity:FindFirstChild("HumanoidRootPart")
-                    and entity.Humanoid.Health > 0
-                then
+                local hum = entity and entity:FindFirstChildOfClass("Humanoid")
+                local root = GetModelRoot(entity)
+                if hum and root and hum.Health > 0 then
                     table.insert(found, entity)
                 end
             end
         end
-        for _, entity in ipairs(game.ReplicatedStorage:GetChildren()) do
-            if
-                entity
-                and entity:FindFirstChild("Humanoid")
-                and entity:FindFirstChild("HumanoidRootPart")
-                and entity.Humanoid.Health > 0
-            then
-                table.insert(found, entity)
-            end
-        end
         table.sort(found, function(entityA, entityB)
-            return CaculateDistance(entityA.HumanoidRootPart.CFrame) < CaculateDistance(entityB.HumanoidRootPart.CFrame)
+            local rootA = GetModelRoot(entityA)
+            local rootB = GetModelRoot(entityB)
+            local distA = rootA and CaculateDistance(rootA.CFrame) or math.huge
+            local distB = rootB and CaculateDistance(rootB.CFrame) or math.huge
+            return distA < distB
         end)
         return found
     end
+
     function GetMeleeIdByName(name)
         for idx, entry in MeleesTable do
             if entry == name then
@@ -1802,19 +1836,26 @@ function sigmahub()
         end
     end
     function getpos(name)
-        for _, npc in game:GetService("ReplicatedStorage").NPCs:GetChildren() do
-            if npc.Name == name then
-                return npc.HumanoidRootPart.CFrame
+        local replicatedNPCs = game:GetService("ReplicatedStorage"):FindFirstChild("NPCs")
+        if replicatedNPCs then
+            for _, npc in replicatedNPCs:GetChildren() do
+                if npc.Name == name then
+                    return GetModelCFrameSafe(npc)
+                end
             end
         end
-        for _, npc in workspace.NPCs:GetChildren() do
-            if npc.Name == name then
-                return npc.HumanoidRootPart.CFrame
+        local workspaceNPCs = workspace:FindFirstChild("NPCs")
+        if workspaceNPCs then
+            for _, npc in workspaceNPCs:GetChildren() do
+                if npc.Name == name then
+                    return GetModelCFrameSafe(npc)
+                end
             end
         end
     end
     function BuyMelee(meleeId, confirm)
-        if meleeId == "DragonClaw" and workspace.NPCs:FindFirstChild("Sabi") then
+        local workspaceNPCs = workspace:FindFirstChild("NPCs")
+        if meleeId == "DragonClaw" and workspaceNPCs and workspaceNPCs:FindFirstChild("Sabi") then
             if confirm then
                 local buyRes = Remotes.CommF_:InvokeServer("BlackbeardReward", "DragonClaw", "1")
                 if (buyRes == 1 or buyRes == true) and not table.find(BoughtMelees, meleeId) then
@@ -2414,9 +2455,9 @@ function sigmahub()
         if enemiesFolder then
             for _, enemy in ipairs(enemiesFolder:GetChildren()) do
                 local inRange = enemy:FindFirstChild("Humanoid")
-                    and enemy:FindFirstChild("HumanoidRootPart")
+                    and GetModelRoot(enemy)
                     and enemy.Humanoid.Health > 0
-                    and (enemy.HumanoidRootPart.Position - myHrp.Position).Magnitude <= 75
+                    and (GetModelRoot(enemy).Position - myHrp.Position).Magnitude <= 75
                 if inRange then
                     table.insert(bladehits, enemy)
                 end
@@ -2436,9 +2477,9 @@ function sigmahub()
             for _, enemy in ipairs(charsFolder:GetChildren()) do
                 local inRange = enemy.Name ~= game.Players.LocalPlayer.Name
                     and enemy:FindFirstChild("Humanoid")
-                    and enemy:FindFirstChild("HumanoidRootPart")
+                    and GetModelRoot(enemy)
                     and enemy.Humanoid.Health > 0
-                    and (enemy.HumanoidRootPart.Position - myHrp.Position).Magnitude <= 75
+                    and (GetModelRoot(enemy).Position - myHrp.Position).Magnitude <= 75
                 if inRange then
                     table.insert(bladehits, enemy)
                 end
@@ -2502,11 +2543,10 @@ function sigmahub()
         if not CombatController.GRAB then
             return
         end
-        if not MonResult or not MonResult:FindFirstChild("HumanoidRootPart") then
+        local targetRoot = GetModelRoot(MonResult)
+        if not targetRoot then
             return
         end
-
-        local targetRoot = MonResult.HumanoidRootPart
         local targetPos = targetRoot.Position
         local enemiesFolder = Services.Workspace:FindFirstChild("Enemies")
         if not enemiesFolder then
@@ -2562,34 +2602,39 @@ function sigmahub()
     end
 
     local function GetEntityDistance(entity)
-        local rootPart = entity and entity:FindFirstChild("HumanoidRootPart")
+        local rootPart = GetModelRoot(entity)
         return rootPart and math.floor(CalculateDistance(rootPart.CFrame)) or math.huge
     end
     function CombatController.Search(names)
         local candidates = {}
-        local anyFound = false
-        for _, entity in GetMonAsSortedRange() do
-            if table.find(names, entity.Name) and entity:FindFirstChild("Humanoid") and entity.Humanoid.Health > 0 then
-                if (entity:GetAttribute("FailureCount") or 0) < 3 then
-                    anyFound = true
+        names = type(names) == "string" and { names } or (names or {})
+
+        local enemiesFolder = Services.Workspace:FindFirstChild("Enemies")
+        if enemiesFolder then
+            for _, entity in ipairs(enemiesFolder:GetChildren()) do
+                local hum = entity:FindFirstChildOfClass("Humanoid")
+                local root = GetModelRoot(entity)
+                if table.find(names, entity.Name)
+                    and hum
+                    and root
+                    and hum.Health > 0
+                    and (entity:GetAttribute("FailureCount") or 0) < 3
+                then
                     table.insert(candidates, entity)
                 end
             end
         end
+
         table.sort(candidates, function(entityA, entityB)
-            return GetEntityDistance(entityA) < GetEntityDistance(entityB)
+            local rootA = GetModelRoot(entityA)
+            local rootB = GetModelRoot(entityB)
+            local distA = rootA and CaculateDistance(rootA.CFrame) or math.huge
+            local distB = rootB and CaculateDistance(rootB.CFrame) or math.huge
+            return distA < distB
         end)
-        if anyFound then
-            local best = candidates[1]
-            return best
-        end
-        for _, npcName in names do
-            local npc = game.ReplicatedStorage:FindFirstChild(npcName)
-            if npc then
-                return npc
-            end
-        end
+        return candidates[1]
     end
+
     function CombatController.Attack(names, useNearest, maxDistance, onGiveUp)
         if
             ScriptStorage.Tools["Sweet Chalice"] and safe_getsenv(game.ReplicatedStorage.GuideModule)["_G"]["InCombat"]
@@ -2620,7 +2665,7 @@ function sigmahub()
             else
                 MonResult = CombatController.Search(names)
             end
-            if MonResult then
+            if MonResult and MonResult:IsDescendantOf(workspace) and GetModelRoot(MonResult) then
                 LastFound = os.time()
                 local attackTicks = 0
                 local attackTicks2, lastTickTime = 0, os.time()
@@ -2651,9 +2696,12 @@ function sigmahub()
                         myHum:ChangeState(Enum.HumanoidStateType.Jumping)
                     end
 
-                    local monHumanoid = MonResult:FindFirstChild("Humanoid")
-                    local monRoot = MonResult:FindFirstChild("HumanoidRootPart")
-                    if not monHumanoid or monHumanoid.Health <= 0 then
+                    local monHumanoid = MonResult:FindFirstChildOfClass("Humanoid")
+                    local monRoot = GetModelRoot(MonResult)
+                    if monRoot and not monRoot:IsDescendantOf(workspace) then
+                        monRoot = nil
+                    end
+                    if not monHumanoid or not monRoot or monHumanoid.Health <= 0 then
                         if MonResult.Name == "Don Swan" then
                             Storage:Set("SwanDefeated", true)
                         end
@@ -2689,7 +2737,9 @@ function sigmahub()
                                 attackTicks = 0
                                 local oldPos = MonResult:GetAttribute("OldPosition")
                                 if oldPos then
-                                    MonResult:SetPrimaryPartCFrame(CFrame.new(oldPos))
+                                    pcall(function()
+                                        MonResult:PivotTo(CFrame.new(oldPos))
+                                    end)
                                     MonResult:SetAttribute("IgnoreGrab", true)
                                     MonResult:SetAttribute(
                                         "FailureCount",
@@ -2701,7 +2751,10 @@ function sigmahub()
                                             .. tostring(MonResult:GetAttribute("FailureCount") or 0)
                                             .. ")"
                                     )
-                                    MonResult.HumanoidRootPart.CFrame = (CFrame.new(oldPos))
+                                    local resetRoot = GetModelRoot(MonResult)
+                                    if resetRoot then
+                                        resetRoot.CFrame = CFrame.new(oldPos)
+                                    end
                                     task.wait()
                                     return
                                 end
@@ -2713,7 +2766,7 @@ function sigmahub()
                         if shouldUseFruit then
                             TweenController.Create(monRoot.CFrame + Vector3.new(0, 25, 0))
                             FunctionsHandler.LocalPlayerController.Methods.EquipTool:Call("Blox Fruit")
-                            LockAimPositionTo(MonResult.HumanoidRootPart.CFrame.p)
+                            LockAimPositionTo(monRoot.CFrame.p)
                             local keyList = { "Z", "X", "C", "V" }
                             local chosenKey = keyList[math.random(1, #keyList)]
                             SendKey(chosenKey, 0.31)
@@ -2745,7 +2798,7 @@ function sigmahub()
                     ["God's Guard"] = Vector3.new(-4720, 845, -1950),
                     ["Bandit"] = Vector3.new(1060, 16, 1548),
                     ["Monkey"] = Vector3.new(-1610, 36, 147),
-                    ["Gorilla"] = Vector3.new(-1240, 6, -500),
+                    ["Gorilla"] = Vector3.new(-1225, 7, -505),
                     ["Pirate"] = Vector3.new(-1215, 4, 3915),
                     ["Brute"] = Vector3.new(-1145, 14, 4300),
                     ["Desert Bandit"] = Vector3.new(900, 6, 4400),
@@ -3513,7 +3566,7 @@ function sigmahub()
                         end
                     else
                         local npcInstance = ScriptStorage.NPCs[questInfo[4]]
-                        local npcPos = npcInstance and npcInstance:GetModelCFrame()
+                        local npcPos = GetModelCFrameSafe(npcInstance)
                         if npcPos then
                             TweenController.Create(npcPos + Vector3.new(0, 5, 3))
                             if CalculateDistance(npcPos) < 10 then
@@ -3599,7 +3652,7 @@ function sigmahub()
                 else
                     DebugLog("Start Cake Quest")
                     local cakeNpc = ScriptStorage.NPCs["Cake Quest Giver 1"]
-                    local cakeNpcCFrame = cakeNpc and cakeNpc:GetModelCFrame()
+                    local cakeNpcCFrame = GetModelCFrameSafe(cakeNpc)
                     if cakeNpcCFrame then
                         TweenController.Create(cakeNpcCFrame + Vector3.new(0, 5, 3))
                         if CalculateDistance(cakeNpcCFrame) < 10 then
@@ -3645,8 +3698,8 @@ function sigmahub()
                 DebugLog("StartQuest Bones", activeBonesQuest)
                 local hauntedCastlePos = CFrame.new(-9516.99316, 172.01718, 6078.46533)
                 local hauntedNpc = ScriptStorage.NPCs["Haunted Castle Quest Giver 2"]
-                    or workspace.NPCs:FindFirstChild("Haunted Castle Quest Giver 2")
-                    or game.ReplicatedStorage.NPCs:FindFirstChild("Haunted Castle Quest Giver 2")
+                    or (workspace:FindFirstChild("NPCs") and workspace.NPCs:FindFirstChild("Haunted Castle Quest Giver 2"))
+                    or (game.ReplicatedStorage:FindFirstChild("NPCs") and game.ReplicatedStorage.NPCs:FindFirstChild("Haunted Castle Quest Giver 2"))
 
                 if not hauntedNpc and CalculateDistance(hauntedCastlePos) > 50 then
                     SetTask("SubTask", "Bones Quest | Traveling | Haunted Castle Area")
@@ -3655,9 +3708,9 @@ function sigmahub()
                 end
 
                 hauntedNpc = hauntedNpc
-                    or workspace.NPCs:WaitForChild("Haunted Castle Quest Giver 2", 5)
-                    or game.ReplicatedStorage.NPCs:WaitForChild("Haunted Castle Quest Giver 2", 5)
-                local hauntedNpcCFrame = hauntedNpc and hauntedNpc:GetModelCFrame()
+                    or (workspace:FindFirstChild("NPCs") and workspace.NPCs:WaitForChild("Haunted Castle Quest Giver 2", 5))
+                    or (game.ReplicatedStorage:FindFirstChild("NPCs") and game.ReplicatedStorage.NPCs:WaitForChild("Haunted Castle Quest Giver 2", 5))
+                local hauntedNpcCFrame = GetModelCFrameSafe(hauntedNpc)
 
                 if hauntedNpcCFrame then
                     TweenController.Create(hauntedNpcCFrame + Vector3.new(0, 5, 3))
@@ -4534,7 +4587,7 @@ function sigmahub()
                     and task.wait(0.05)
                 do
                     attackedAny = true
-                    if string.find(enemy.Name, "Master") or true then
+                    if string.find(enemy.Name, "Master") then
                         CombatController.Attack(enemy.Name)
                     else
                         pcall(sethiddenproperty, LocalPlayer, "SimulationRadius", math.huge)
@@ -4573,7 +4626,7 @@ function sigmahub()
         FunctionsHandler.CollectDrops:Set("CurrentProgressLevel", nil)
         if fruitDrop then
             SetTask("MainTask", "Collect Drops | Fruit | Picking up " .. tostring(fruitDrop))
-            TweenController.Create(fruitDrop:GetModelCFrame())
+            TweenController.Create(GetModelCFrameSafe(fruitDrop))
         end
     end)
 
@@ -4985,7 +5038,7 @@ function sigmahub()
     FunctionsHandler.Yama:RegisterMethod("Start", function()
         repeat
             task.wait()
-            TweenController.Create(game:GetService("ReplicatedStorage").FakeIslands.Waterfall:GetModelCFrame())
+            TweenController.Create(GetModelCFrameSafe(game:GetService("ReplicatedStorage").FakeIslands.Waterfall))
         until workspace.Map:FindFirstChild("Waterfall") and workspace.Map.Waterfall:FindFirstChild("SealedKatana")
         fireclickdetector(workspace.Map.Waterfall.SealedKatana.Hitbox.ClickDetector)
     end)
@@ -5593,7 +5646,10 @@ function sigmahub()
                             LocalPlayer.Character.Humanoid.Health = 0
                         end)
                     end
-                    TweenController.Create(ScriptStorage.Enemies["Soul Reaper"]:GetModelCFrame())
+                    local soulReaperCF = GetModelCFrameSafe(ScriptStorage.Enemies["Soul Reaper"])
+                    if soulReaperCF then
+                        TweenController.Create(soulReaperCF)
+                    end
                 end
                 if not ScriptStorage.Enemies["Soul Reaper"] then
                     return
@@ -5603,8 +5659,10 @@ function sigmahub()
             end
         else
             if progressState[2] == 1 then
-                for _, npc in game.ReplicatedStorage.NPCs:GetChildren() do
-                    if npc.Name == "Luxury Boat Dealer" then
+                local replicatedNPCs = game.ReplicatedStorage:FindFirstChild("NPCs")
+                if replicatedNPCs then
+                    for _, npc in replicatedNPCs:GetChildren() do
+                        if npc.Name == "Luxury Boat Dealer" then
                         repeat
                             task.wait()
                             if os.time() - DoneCdkTick < 15 then
@@ -5613,19 +5671,21 @@ function sigmahub()
                             local charRoot = game.Players.LocalPlayer.Character
                                 and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                             if charRoot then
-                                charRoot.CFrame = npc:GetModelCFrame()
+                                charRoot.CFrame = GetModelCFrameSafe(npc)
                             end
                             luxuryBoatDealerNpc = nil
                             local npcsFolder = workspace:FindFirstChild("NPCs")
                             if npcsFolder then
                                 for _, candidateNpc in ipairs(npcsFolder:GetChildren()) do
-                                    if CalculateDistance(candidateNpc:GetModelCFrame(), npc:GetModelCFrame()) < 20 then
+                                    local candidateCF = GetModelCFrameSafe(candidateNpc)
+                                    local dealerCF = GetModelCFrameSafe(npc)
+                                    if candidateCF and dealerCF and CalculateDistance(candidateCF, dealerCF) < 20 then
                                         luxuryBoatDealerNpc = candidateNpc
                                         break
                                     end
                                 end
                             end
-                        until CalculateDistance(npc:GetModelCFrame()) < 5 and luxuryBoatDealerNpc
+                        until (GetModelCFrameSafe(npc) and CalculateDistance(GetModelCFrameSafe(npc)) < 5) and luxuryBoatDealerNpc
                         Remotes.CommF_:InvokeServer("CDKQuest", "BoatQuest", luxuryBoatDealerNpc)
                     end
                 end
@@ -5953,6 +6013,7 @@ function sigmahub()
                         end)
                         return
                     end
+                end
                 end
             elseif not TaskWarned[taskName] then
                 DebugLog("[ Debug ] Task", taskName, "is not registered yet")
