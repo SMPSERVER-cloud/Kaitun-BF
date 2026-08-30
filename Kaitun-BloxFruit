@@ -14,32 +14,42 @@ end
 local function CORNER(px)
     return UDim.new(0,px)
 end
-local function SafeGenv()
-    if type(getgenv) == "function" then
-        local ok, env = pcall(getgenv)
-        if ok and type(env) == "table" then
-            return env
-        end
+-- Minimal safe bootstrap: no optional executor function is called blindly.
+local GEN = _G
+local getgenvFn = rawget(_G, "getgenv")
+if type(getgenvFn) == "function" then
+    local ok, env = pcall(getgenvFn)
+    if ok and type(env) == "table" then
+        GEN = env
     end
-    return _G
 end
-local GEN = SafeGenv()
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
-local player
-repeat
-    player = Players.LocalPlayer
-    if not player then
-        task.wait()
+local player = Players.LocalPlayer
+if not player then
+    local ok, result = pcall(function()
+        return Players.PlayerAdded:Wait()
+    end)
+    if ok then
+        player = result
     end
-until player
+end
+if not player then
+    error("KAITUN: LocalPlayer chưa sẵn sàng", 0)
+end
 
-local pg = player:FindFirstChildOfClass("PlayerGui")
+local pg = player:FindFirstChild("PlayerGui")
 if not pg then
-    pg = player:WaitForChild("PlayerGui")
+    local ok, result = pcall(function()
+        return player:WaitForChild("PlayerGui", 10)
+    end)
+    if ok then pg = result end
+end
+if not pg then
+    error("KAITUN: PlayerGui không tồn tại", 0)
 end
 
     local old = pg:FindFirstChild("KaitunFluentMenu")
@@ -55,15 +65,17 @@ end
     gui.IgnoreGuiInset = true
     gui.DisplayOrder = 1000000
     gui.Enabled = true
-    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    gui.Parent = pg
+        gui.Parent = pg
+pcall(function()
+    gui.Enabled = true
+end)
 
     local open = Instance.new("ImageButton")
     open.Name = "OpenButton"
     open.Size = OFF(52,52)
     open.Position = UDim2.new(0,18,0.5,-26)
     open.BackgroundColor3 = RGB(28,28,32)
-    open.Image = "rbxassetid://78902644870708"
+    pcall(function() open.Image = "rbxassetid://78902644870708" end)
     open.ScaleType = Enum.ScaleType.Fit
     open.Parent = gui
     do local c=Instance.new("UICorner"); c.CornerRadius=CORNER(1); c.Parent=open end
@@ -86,7 +98,7 @@ end
     bg.Size = OFF(280,280)
     bg.Position = UDim2.new(1,-230,0.5,-130)
     bg.BackgroundTransparency = 1
-    bg.Image = "rbxassetid://78902644870708"
+    pcall(function() bg.Image = "rbxassetid://78902644870708" end)
     bg.ImageTransparency = 0.82
     bg.Visible = true
     bg.ScaleType = Enum.ScaleType.Fit
@@ -97,7 +109,7 @@ end
     top.Size = UDim2.new(1,0,0,58); top.BackgroundTransparency=1; top.ZIndex=2; top.Parent=main
     local logo = Instance.new("ImageLabel")
     logo.Size=OFF(38,38); logo.Position=OFF(14,10); logo.BackgroundTransparency=1
-    logo.Image="rbxassetid://78902644870708"; logo.ScaleType=Enum.ScaleType.Fit; logo.Visible=true; logo.Parent=top
+    pcall(function() logo.Image="rbxassetid://78902644870708" end); logo.ScaleType=Enum.ScaleType.Fit; logo.Visible=true; logo.Parent=top
     local title=Instance.new("TextLabel")
     title.Size=UDim2.new(1,-120,1,0); title.Position=OFF(62,0); title.BackgroundTransparency=1
     title.Text="KAITUN"; title.TextColor3=RGB(245,245,247); title.TextSize=20; title.Font=Enum.Font.GothamBold
